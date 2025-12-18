@@ -1,6 +1,4 @@
 const { query } = require('../utils/database');
-const User = require('./User');
-
 class Couple {
   constructor(data) {
     this.id = data.id;
@@ -93,6 +91,27 @@ class Couple {
       return new Couple(result.rows[0]);
     } catch (error) {
       throw new Error(`Failed to check couple relationship: ${error.message}`);
+    }
+  }
+
+  // 获取所有活跃情侣
+  static async findActive() {
+    const sql = `
+      SELECT c.*, 
+             u1.nickname as user1_nickname, u1.avatar_url as user1_avatar_url,
+             u2.nickname as user2_nickname, u2.avatar_url as user2_avatar_url
+      FROM couples c
+      LEFT JOIN users u1 ON c.user1_id = u1.id
+      LEFT JOIN users u2 ON c.user2_id = u2.id
+      WHERE c.status = 'active'
+      ORDER BY c.created_at DESC
+    `;
+    
+    try {
+      const result = await query(sql);
+      return result.rows.map(row => new Couple(row));
+    } catch (error) {
+      throw new Error(`Failed to find active couples: ${error.message}`);
     }
   }
 

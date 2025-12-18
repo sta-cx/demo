@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const { query } = require('../utils/database');
 const logger = require('../utils/logger');
+const { authLimiter, smsLimiter } = require('../middleware/rateLimiter');
 
 // Send verification code
-router.post('/send-code', async (req, res) => {
+router.post('/send-code', smsLimiter, async (req, res) => {
   try {
     const { phone } = req.body;
     
@@ -31,7 +31,7 @@ router.post('/send-code', async (req, res) => {
 });
 
 // Login with verification code
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { phone, code } = req.body;
     

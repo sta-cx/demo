@@ -4,6 +4,15 @@ const authMiddleware = require('../middleware/auth');
 const QuestionService = require('../services/questionService');
 const Couple = require('../models/Couple');
 const logger = require('../utils/logger');
+const { answerLimiter } = require('../middleware/rateLimiter');
+
+// WebSocket server instance (will be set by index.js)
+let wsServer = null;
+
+// Set WebSocket server instance
+router.setWebSocketServer = (server) => {
+  wsServer = server;
+};
 
 // Get today's question
 router.get('/today', authMiddleware, async (req, res) => {
@@ -79,7 +88,7 @@ router.get('/today', authMiddleware, async (req, res) => {
 });
 
 // Submit answer
-router.post('/answer', authMiddleware, async (req, res) => {
+router.post('/answer', authMiddleware, answerLimiter, async (req, res) => {
   try {
     const userId = req.user.userId;
     const { question_id, answer_text, media_url, answer_type } = req.body;
@@ -120,8 +129,31 @@ router.post('/answer', authMiddleware, async (req, res) => {
       }
     );
 
-    // TODO: Send notification to partner
-    // This could be implemented using WebSocket or push notifications
+    // Send real-time notification to partner via WebSocket
+    if (wsServer) {
+      wsServer.notifyNewAnswer(couple.id, {
+        answer_id: answer.id,
+        user_id: userId,
+        question_id: question_id,
+        answer_text: answer.answer_text,
+        media_url: answer.media_url,
+        created_at: answer.created_at
+      });
+
+      // Check if question is now completed (both users answered)
+      const todayQuestion = await QuestionService.getTodayQuestion(couple.id);
+      const isUser1 = couple.user1_id === userId;
+      const questionCompleted = isUser1 ? 
+        todayQuestion.user1_answered && todayQuestion.user2_answered :
+        todayQuestion.user1_answered && todayQuestion.user2_answered;
+
+      if (questionCompleted) {
+        wsServer.notifyQuestionCompleted(couple.id, {
+          question_id: question_id,
+          completed_at: new Date().toISOString()
+        });
+      }
+    }
 
     res.status(201).json({
       message: 'Answer submitted successfully',
