@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+.env*
+logs/
+public/
+.next/
+.nuxt/
+out/
+.storybook-out/
+.cache/
+.parcel-cache/
+.tmp/
+temp/

@@ -50,6 +50,7 @@ class IFlowClient {
           
           logger.warn(`Rate limited. Retrying after ${retryAfter} seconds`);
           
+          /* eslint-disable-next-line no-undef */
           await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
           
           return this.client(originalRequest);

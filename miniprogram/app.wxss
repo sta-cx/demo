@@ -1,0 +1,392 @@
+/* 全局设计系统 - 情侣日常应用 */
+
+/* ==================== 色彩系统 ==================== */
+/* 主色调 - 温暖浪漫 */
+:root {
+  --primary-color: #FF6B9D;      /* 主粉色 - 温暖浪漫 */
+  --primary-light: #FFB3D1;      /* 浅粉色 */
+  --primary-dark: #E91E63;       /* 深粉色 */
+  --primary-gradient: linear-gradient(135deg, #FF6B9D 0%, #FF8E53 100%);
+  
+  /* 辅助色 */
+  --secondary-color: #FF8E53;    /* 橙粉色 - 活力温暖 */
+  --accent-color: #FFC107;       /* 金黄色 - 阳光积极 */
+  --success-color: #4CAF50;      /* 成功绿 */
+  --warning-color: #FF9800;      /* 警告橙 */
+  --error-color: #F44336;        /* 错误红 */
+  
+  /* 中性色 */
+  --text-primary: #2C3E50;       /* 主文字 - 深蓝灰 */
+  --text-secondary: #7F8C8D;     /* 次要文字 - 灰蓝 */
+  --text-tertiary: #BDC3C7;      /* 辅助文字 - 浅灰 */
+  --text-disabled: #ECF0F1;      /* 禁用文字 */
+  
+  /* 背景色 */
+  --bg-primary: #FFFFFF;         /* 主背景 */
+  --bg-secondary: #F8F9FA;       /* 次要背景 */
+  --bg-tertiary: #F5F6FA;        /* 三级背景 */
+  --bg-overlay: rgba(0, 0, 0, 0.5); /* 遮罩 */
+  
+  /* 边框色 */
+  --border-light: #ECF0F1;       /* 浅边框 */
+  --border-medium: #BDC3C7;      /* 中边框 */
+  --border-dark: #95A5A6;        /* 深边框 */
+  
+  /* 阴影 */
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.16);
+  --shadow-xl: 0 16rpx 48rpx rgba(0, 0, 0, 0.20);
+}
+
+/* ==================== 字体系统 ==================== */
+page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+/* 字体大小 */
+.text-xs { font-size: 20rpx; }
+.text-sm { font-size: 24rpx; }
+.text-base { font-size: 28rpx; }
+.text-lg { font-size: 32rpx; }
+.text-xl { font-size: 36rpx; }
+.text-2xl { font-size: 40rpx; }
+.text-3xl { font-size: 48rpx; }
+
+/* 字体粗细 */
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+/* ==================== 间距系统 ==================== */
+.m-0 { margin: 0; }
+.m-1 { margin: 8rpx; }
+.m-2 { margin: 16rpx; }
+.m-3 { margin: 24rpx; }
+.m-4 { margin: 32rpx; }
+.m-5 { margin: 40rpx; }
+.m-6 { margin: 48rpx; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 8rpx; }
+.mt-2 { margin-top: 16rpx; }
+.mt-3 { margin-top: 24rpx; }
+.mt-4 { margin-top: 32rpx; }
+.mt-5 { margin-top: 40rpx; }
+.mt-6 { margin-top: 48rpx; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 8rpx; }
+.mb-2 { margin-bottom: 16rpx; }
+.mb-3 { margin-bottom: 24rpx; }
+.mb-4 { margin-bottom: 32rpx; }
+.mb-5 { margin-bottom: 40rpx; }
+.mb-6 { margin-bottom: 48rpx; }
+
+.p-0 { padding: 0; }
+.p-1 { padding: 8rpx; }
+.p-2 { padding: 16rpx; }
+.p-3 { padding: 24rpx; }
+.p-4 { padding: 32rpx; }
+.p-5 { padding: 40rpx; }
+.p-6 { padding: 48rpx; }
+
+/* ==================== 圆角系统 ==================== */
+.rounded-none { border-radius: 0; }
+.rounded-sm { border-radius: 8rpx; }
+.rounded { border-radius: 16rpx; }
+.rounded-md { border-radius: 24rpx; }
+.rounded-lg { border-radius: 32rpx; }
+.rounded-xl { border-radius: 48rpx; }
+.rounded-2xl { border-radius: 64rpx; }
+.rounded-full { border-radius: 9999rpx; }
+
+/* ==================== 阴影系统 ==================== */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+/* ==================== 布局系统 ==================== */
+.container {
+  padding: 32rpx;
+  background: var(--bg-secondary);
+  min-height: 100vh;
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.justify-evenly { justify-content: space-evenly; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+/* ==================== 按钮组件 ==================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 48rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  padding: 0 32rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--primary-color);
+  border: 2rpx solid var(--primary-color);
+}
+
+.btn-secondary:active {
+  background: var(--primary-light);
+  color: white;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 2rpx solid var(--primary-color);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-sm {
+  height: 60rpx;
+  line-height: 60rpx;
+  font-size: 24rpx;
+  padding: 0 24rpx;
+}
+
+.btn-lg {
+  height: 96rpx;
+  line-height: 96rpx;
+  font-size: 32rpx;
+  padding: 0 40rpx;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  transform: none !important;
+}
+
+/* ==================== 卡片组件 ==================== */
+.card {
+  background: white;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 24rpx;
+}
+
+.card-sm {
+  padding: 24rpx;
+  border-radius: 24rpx;
+}
+
+.card-lg {
+  padding: 40rpx;
+  border-radius: 40rpx;
+}
+
+/* ==================== 标签组件 ==================== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.tag-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.tag-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.tag-success {
+  background: var(--success-color);
+  color: white;
+}
+
+.tag-warning {
+  background: var(--warning-color);
+  color: white;
+}
+
+/* ==================== 动画效果 ==================== */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+.heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 24rpx;
+  }
+  
+  .card {
+    padding: 24rpx;
+    border-radius: 24rpx;
+  }
+}
+
+/* ==================== 状态样式 ==================== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  color: var(--text-tertiary);
+  font-size: 28rpx;
+}
+
+.loading::before {
+  content: '';
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid var(--primary-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  margin-right: 16rpx;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ==================== 情感化元素 ==================== */
+.heart-pulse {
+  display: inline-block;
+  animation: heartPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes heartPulse {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.05); }
+}
+
+.love-gradient {
+  background: linear-gradient(45deg, #FF6B9D, #FF8E53, #FFC107);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

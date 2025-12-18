@@ -3,6 +3,8 @@ const DailyQuestion = require('../models/DailyQuestion');
 const Answer = require('../models/Answer');
 const Couple = require('../models/Couple');
 const logger = require('../utils/logger');
+const aiService = require('./aiService');
+const analysisService = require('./analysisService');
 
 class QuestionService {
   /**
@@ -102,9 +104,75 @@ class QuestionService {
    */
   static async selectOptimalQuestion(coupleId) {
     try {
+      // 首先尝试AI生成个性化问题
+      return await this.selectOptimalQuestionWithAI(coupleId);
+    } catch (error) {
+      logger.warn(`AI question generation failed for couple ${coupleId}, using fallback:`, error.message);
+      // 降级到传统方法
+      return await this.selectOptimalQuestionFallback(coupleId);
+    }
+  }
+
+  /**
+   * 使用AI生成个性化问题
+   * @param {string} coupleId - 情侣ID
+   * @returns {string} 问题ID
+   */
+  static async selectOptimalQuestionWithAI(coupleId) {
+    try {
+      // 获取情侣最近30天的回答历史
+      const history = await analysisService.getCoupleHistory(coupleId, 30);
+      
+      // 检查是否有足够的历史记录（至少7天）
+      if (history.length < 7) {
+        logger.info(`Insufficient history for AI generation (${history.length} days), using fallback`);
+        return await this.selectOptimalQuestionFallback(coupleId);
+      }
+      
+      // 获取最近使用的问题ID用于去重
+      const recentQuestions = await DailyQuestion.getHistory(coupleId, 30, 0);
+      const usedQuestionTexts = recentQuestions.map(dq => dq.question_text);
+      
+      // 使用AI生成个性化问题
+      const generatedQuestion = await aiService.generatePersonalizedQuestion(coupleId, history);
+      
+      // 检查问题是否与最近使用的问题重复
+      const isDuplicate = this.checkQuestionDuplicate(generatedQuestion.question_text, usedQuestionTexts);
+      if (isDuplicate) {
+        logger.info(`Generated question is duplicate, using fallback`);
+        return await this.selectOptimalQuestionFallback(coupleId);
+      }
+      
+      // 创建新问题
+      const question = await Question.create({
+        question_text: generatedQuestion.question_text,
+        category: generatedQuestion.category,
+        difficulty: generatedQuestion.difficulty,
+        tags: generatedQuestion.tags,
+        answer_type: generatedQuestion.answer_type,
+        is_active: true
+      });
+      
+      logger.info(`Generated AI question ${question.id} for couple ${coupleId}`);
+      return question.id;
+      
+    } catch (error) {
+      logger.error(`AI question generation failed for couple ${coupleId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 传统问题选择方法（降级方案）
+   * @param {string} coupleId - 情侣ID
+   * @returns {string} 问题ID
+   */
+  static async selectOptimalQuestionFallback(coupleId) {
+    try {
       // 获取情侣最近30天的问题历史
       const recentQuestions = await DailyQuestion.getHistory(coupleId, 30, 0);
       const excludeIds = recentQuestions.map(dq => dq.question_id);
+      const usedQuestionTexts = recentQuestions.map(dq => dq.question_text);
       
       // 获取情侣回答统计，分析偏好
       const stats = await Answer.getStats(coupleId, 30);
@@ -131,15 +199,65 @@ class QuestionService {
         question = await Question.getRandomByCategory(null, excludeIds);
       }
       
+      // 检查问题文本是否重复
+      if (question && this.checkQuestionDuplicate(question.question_text, usedQuestionTexts)) {
+        // 如果重复，再次尝试获取不同问题
+        question = await Question.getRandomByCategory(null, excludeIds);
+      }
+      
       if (!question) {
         throw new Error('No available questions found');
       }
       
       return question.id;
     } catch (error) {
-      logger.error(`Error selecting optimal question for couple ${coupleId}:`, error);
+      logger.error(`Fallback question selection failed for couple ${coupleId}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * 检查问题是否重复
+   * @param {string} questionText - 新问题文本
+   * @param {Array} usedTexts - 已使用的问题文本列表
+   * @returns {boolean} 是否重复
+   */
+  static checkQuestionDuplicate(questionText, usedTexts) {
+    if (!usedTexts || usedTexts.length === 0) {
+      return false;
+    }
+    
+    // 简单的文本相似度检查
+    const normalizedNew = questionText.replace(/[？?。！!，,]/g, '').trim().toLowerCase();
+    
+    return usedTexts.some(usedText => {
+      const normalizedUsed = usedText.replace(/[？?。！!，,]/g, '').trim().toLowerCase();
+      
+      // 检查是否完全相同
+      if (normalizedNew === normalizedUsed) {
+        return true;
+      }
+      
+      // 检查相似度（简单的字符重叠度）
+      const similarity = this.calculateTextSimilarity(normalizedNew, normalizedUsed);
+      return similarity > 0.8; // 80%相似度阈值
+    });
+  }
+
+  /**
+   * 计算文本相似度
+   * @param {string} text1 - 文本1
+   * @param {string} text2 - 文本2
+   * @returns {number} 相似度（0-1）
+   */
+  static calculateTextSimilarity(text1, text2) {
+    const words1 = text1.split('');
+    const words2 = text2.split('');
+    
+    const intersection = words1.filter(word => words2.includes(word));
+    const union = [...new Set([...words1, ...words2])];
+    
+    return intersection.length / union.length;
   }
 
   /**
@@ -207,9 +325,17 @@ class QuestionService {
    */
   static async analyzeAnswerAsync(answerId, answerText) {
     try {
-      // 这里可以集成心流API进行情感分析
-      // 目前使用简单的关键词分析
-      const analysis = this.simpleSentimentAnalysis(answerText);
+      let analysis = null;
+      
+      // 首先尝试使用心流API进行情感分析
+      try {
+        analysis = await aiService.analyzeSentiment(answerText);
+        logger.info(`Answer analyzed with AI: ${answerId}`, analysis);
+      } catch (aiError) {
+        logger.warn(`AI sentiment analysis failed for answer ${answerId}, using fallback:`, aiError.message);
+        // 降级到简单关键词分析
+        analysis = this.simpleSentimentAnalysis(answerText);
+      }
       
       if (analysis) {
         await Answer.analyzeAnswer(answerId, analysis);

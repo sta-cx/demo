@@ -282,6 +282,26 @@ class Answer {
     }
   }
 
+  // 根据日期范围获取回答
+  static async findByDateRange(coupleId, startDate, endDate) {
+    const sql = `
+      SELECT * FROM answers 
+      WHERE couple_id = $1 
+        AND answer_date >= $2 
+        AND answer_date <= $3
+      ORDER BY answer_date ASC, created_at ASC
+    `;
+    
+    try {
+      const result = await query(sql, [coupleId, startDate, endDate]);
+      return result.rows.map(row => new Answer(row));
+    } catch (error) {
+      throw new Error(`Failed to find answers by date range: ${error.message}`);
+    }
+  }
+
+  
+
   // 获取回答历史趋势
   static async getTrend(coupleId, days = 30) {
     const sql = `

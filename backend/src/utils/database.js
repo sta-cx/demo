@@ -7,18 +7,19 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'our_daily',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres123',
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-  connectionTimeoutMillis: 2000, // How long to wait when connecting a new client
+  max: 10,
+  min: 0,
+  connectionTimeoutMillis: 5000,
 });
 
-// Helper function to return rows properly
 const query = async (text, params) => {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
+    if (duration > 100) {
+      console.warn('Slow query detected', { text, duration, rows: res.rowCount });
+    }
     return res;
   } catch (error) {
     console.error('Database query error', { text, error });
@@ -26,14 +27,20 @@ const query = async (text, params) => {
   }
 };
 
-// Test database connection
-pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database');
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
 });
 
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+process.on('SIGINT', async () => {
+  console.log('Shutting down database pool...');
+  await pool.end();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('Shutting down database pool...');
+  await pool.end();
+  process.exit(0);
 });
 
 module.exports = {

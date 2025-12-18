@@ -1,0 +1,154 @@
+<view class="container">
+  <!-- 问题展示区域 -->
+  <view class="question-card fade-in" wx:if="{{question}}">
+    <view class="question-header">
+      <view class="question-category tag tag-primary">
+        <text>{{question.category}}</text>
+      </view>
+      <view class="question-difficulty">
+        <text wx:for="{{question.difficulty}}" wx:key="*this">✨</text>
+      </view>
+    </view>
+    <view class="question-content">
+      <text>{{question.question_text}}</text>
+    </view>
+  </view>
+
+  <!-- 回答输入区域 -->
+  <view class="answer-section slide-up" wx:if="{{!userAnswered}}">
+    <!-- 回答类型选择 -->
+    <view class="answer-type-selector">
+      <button 
+        class="type-btn {{answerType === 'text' ? 'active' : ''}}"
+        bindtap="selectAnswerType"
+        data-type="text"
+        hover-class="btn-hover"
+      >
+        <text>✍️ 文字</text>
+      </button>
+      <button 
+        class="type-btn {{answerType === 'voice' ? 'active' : ''}}"
+        bindtap="selectAnswerType"
+        data-type="voice"
+        hover-class="btn-hover"
+      >
+        <text>🎤 语音</text>
+      </button>
+      <button 
+        class="type-btn {{answerType === 'photo' ? 'active' : ''}}"
+        bindtap="selectAnswerType"
+        data-type="photo"
+        hover-class="btn-hover"
+      >
+        <text>📷 照片</text>
+      </button>
+    </view>
+
+    <!-- 文字输入 -->
+    <view class="answer-input" wx:if="{{answerType === 'text'}}">
+      <textarea 
+        class="text-input"
+        placeholder="💭 写下你的心里话..."
+        value="{{answerText}}"
+        bindinput="onTextInput"
+        maxlength="500"
+        auto-height
+        focus="{{answerType === 'text'}}"
+      />
+      <view class="char-count">
+        <text>{{answerText.length}}</text>
+        <text>/500</text>
+      </view>
+    </view>
+
+    <!-- 语音输入 -->
+    <view class="voice-input" wx:if="{{answerType === 'voice'}}">
+      <button 
+        class="record-btn {{recording ? 'recording' : ''}}" 
+        bindtouchstart="startRecording" 
+        bindtouchend="stopRecording"
+        hover-class="btn-hover"
+      >
+        <text>{{recording ? '🔴 录音中...' : '🎤 按住录音'}}</text>
+      </button>
+      <view class="record-tips">
+        <text>💡 按住按钮开始录音，松开结束录音</text>
+      </view>
+    </view>
+
+    <!-- 照片输入 -->
+    <view class="photo-input" wx:if="{{answerType === 'photo'}}">
+      <button class="photo-btn" bindtap="choosePhoto" hover-class="btn-hover">
+        <text>📷 选择照片</text>
+      </button>
+      <image 
+        wx:if="{{photoUrl}}" 
+        class="preview-image" 
+        src="{{photoUrl}}" 
+        mode="aspectFill"
+        bindtap="previewPhoto"
+        data-url="{{photoUrl}}"
+      />
+      <textarea 
+        wx:if="{{photoUrl}}"
+        class="photo-caption"
+        placeholder="💬 为这张照片添加描述..."
+        value="{{answerText}}"
+        bindinput="onTextInput"
+        maxlength="200"
+        auto-height
+      />
+    </view>
+
+    <!-- 提交按钮 -->
+    <button 
+      class="submit-btn btn btn-lg" 
+      bindtap="submitAnswer" 
+      disabled="{{!canSubmit}}"
+      hover-class="btn-hover"
+    >
+      <text>💝 提交回答</text>
+    </button>
+  </view>
+
+  <!-- 已回答状态展示 -->
+  <view class="already-answered slide-up" wx:else>
+    <!-- 我的回答 -->
+    <view class="answer-preview">
+      <text class="answer-label">💭 我的回答</text>
+      <view class="answer-content">
+        <text>{{myAnswer.answer_text}}</text>
+      </view>
+      <image 
+        wx:if="{{myAnswer.media_url}}" 
+        class="answer-media" 
+        src="{{myAnswer.media_url}}" 
+        mode="aspectFill"
+        bindtap="previewPhoto"
+        data-url="{{myAnswer.media_url}}"
+      />
+    </view>
+    
+    <!-- 伴侣的回答 -->
+    <view class="partner-answer" wx:if="{{partnerAnswered && partnerAnswer}}">
+      <text class="answer-label">💝 TA的回答</text>
+      <view class="answer-content">
+        <text>{{partnerAnswer.answer_text}}</text>
+      </view>
+      <image 
+        wx:if="{{partnerAnswer.media_url}}" 
+        class="answer-media" 
+        src="{{partnerAnswer.media_url}}" 
+        mode="aspectFill"
+        bindtap="previewPhoto"
+        data-url="{{partnerAnswer.media_url}}"
+      />
+    </view>
+
+    <!-- 等待伴侣回答 -->
+    <view class="waiting-partner" wx:else>
+      <text>⏳ 等待TA的回答...</text>
+      <text>回答完成后就能看到彼此的想法啦</text>
+    </view>
+  </view>
+</view>
