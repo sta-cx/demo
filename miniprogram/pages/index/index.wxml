@@ -1,0 +1,72 @@
+<view class="container">
+  <!-- 头部信息区域 -->
+  <view class="header">
+    <view class="couple-info" wx:if="{{coupleInfo}}">
+      <view class="avatar-container">
+        <image class="avatar" src="{{coupleInfo.user1.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+        <view class="heart heart-pulse">💕</view>
+        <image class="avatar" src="{{coupleInfo.user2.avatar_url || '/images/default-avatar.png'}}" mode="aspectFill" />
+      </view>
+      <view class="couple-name">{{coupleInfo.couple_name}}</view>
+    </view>
+    <view class="date">
+      <text>📅 {{todayDate}}</text>
+    </view>
+  </view>
+
+  <!-- 今日问题卡片 -->
+  <view class="question-card fade-in" wx:if="{{todayQuestion}}">
+    <view class="question-header">
+      <view class="question-category tag tag-primary">
+        <text>{{todayQuestion.category}}</text>
+      </view>
+      <view class="question-difficulty">
+        <text wx:for="{{todayQuestion.difficulty}}" wx:key="*this">✨</text>
+      </view>
+    </view>
+    
+    <view class="question-content">
+      <text>{{todayQuestion.question_text}}</text>
+    </view>
+    
+    <view class="answer-status">
+      <view class="status-item {{userAnswered ? 'status-completed' : ''}}">
+        <text class="status-label">💭 我</text>
+        <text class="status-value {{userAnswered ? 'answered' : ''}}">
+          {{userAnswered ? '✅ 已回答' : '⏳ 未回答'}}
+        </text>
+      </view>
+      
+      <view class="status-item {{partnerAnswered ? 'status-completed' : ''}}">
+        <text class="status-label">💝 TA</text>
+        <text class="status-value {{partnerAnswered ? 'answered' : ''}}">
+          {{partnerAnswered ? '✅ 已回答' : '⏳ 未回答'}}
+        </text>
+      </view>
+    </view>
+    
+    <button 
+      class="answer-btn btn btn-lg" 
+      bindtap="goToAnswer" 
+      disabled="{{userAnswered}}"
+      hover-class="btn-hover"
+    >
+      <text>{{userAnswered ? '👀 查看回答' : '💝 开始回答'}}</text>
+    </button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading scale-in" wx:else>
+    <text>正在获取今日问题...</text>
+  </view>
+
+  <!-- 快捷操作区域 -->
+  <view class="quick-actions">
+    <button class="action-btn btn btn-outline" bindtap="goToHistory" hover-class="btn-hover">
+      <text>📖 历史记录</text>
+    </button>
+    <button class="action-btn btn btn-outline" bindtap="goToMemories" hover-class="btn-hover">
+      <text>🎁 回忆录</text>
+    </button>
+  </view>
+</view>

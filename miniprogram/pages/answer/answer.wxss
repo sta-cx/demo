@@ -1,0 +1,451 @@
+/* 回答页面样式 - 应用新设计系统 */
+.container {
+  padding: 32rpx;
+  background: var(--bg-secondary);
+  min-height: 100vh;
+}
+
+/* 问题卡片 */
+.question-card {
+  background: white;
+  border-radius: 40rpx;
+  padding: 48rpx 32rpx;
+  margin-bottom: 32rpx;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.6s ease-out;
+}
+
+.question-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: var(--primary-gradient);
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.question-category {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 12rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.question-difficulty {
+  display: flex;
+  gap: 4rpx;
+  color: var(--accent-color);
+  font-size: 28rpx;
+}
+
+.question-content {
+  font-size: 36rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+  text-align: center;
+  font-weight: 500;
+  position: relative;
+  padding: 0 16rpx;
+}
+
+/* 回答区域 */
+.answer-section {
+  background: white;
+  border-radius: 40rpx;
+  padding: 48rpx 32rpx;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.8s ease-out 0.2s both;
+}
+
+/* 回答类型选择器 */
+.answer-type-selector {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 48rpx;
+  gap: 16rpx;
+}
+
+.type-btn {
+  flex: 1;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 3rpx solid transparent;
+  border-radius: 32rpx;
+  height: 88rpx;
+  line-height: 82rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  padding: 0 16rpx;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.type-btn.active {
+  background: var(--primary-gradient);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4rpx);
+}
+
+.type-btn:active {
+  transform: scale(0.98);
+}
+
+/* 文字输入区域 */
+.answer-input {
+  margin-bottom: 48rpx;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 240rpx;
+  padding: 24rpx;
+  border: 3rpx solid var(--border-light);
+  border-radius: 32rpx;
+  font-size: 32rpx;
+  line-height: 1.6;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.text-input:focus {
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 6rpx rgba(255, 107, 157, 0.1), var(--shadow-md);
+}
+
+.char-count {
+  text-align: right;
+  color: var(--text-tertiary);
+  font-size: 24rpx;
+  margin-top: 16rpx;
+  font-weight: 500;
+}
+
+/* 语音输入区域 */
+.voice-input {
+  text-align: center;
+  margin-bottom: 48rpx;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.record-btn {
+  background: linear-gradient(135deg, #E91E63, #FF6B9D);
+  color: white;
+  border-radius: 50%;
+  height: 240rpx;
+  width: 240rpx;
+  line-height: 240rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  margin: 0 auto 32rpx;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.record-btn.recording {
+  background: linear-gradient(135deg, #F44336, #E91E63);
+  animation: pulse 2s infinite;
+}
+
+.record-btn:active {
+  transform: scale(0.95);
+  box-shadow: var(--shadow-md);
+}
+
+.record-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.6s ease;
+}
+
+.record-btn.recording::before {
+  transform: translate(-50%, -50%) scale(1.5);
+  opacity: 0;
+}
+
+.record-tips {
+  color: var(--text-secondary);
+  font-size: 26rpx;
+  line-height: 1.5;
+  padding: 16rpx 24rpx;
+  background: var(--bg-tertiary);
+  border-radius: 24rpx;
+  display: inline-block;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.4); }
+  70% { box-shadow: 0 0 0 20rpx rgba(233, 30, 99, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(233, 30, 99, 0); }
+}
+
+/* 照片输入区域 */
+.photo-input {
+  text-align: center;
+  margin-bottom: 48rpx;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.photo-btn {
+  background: linear-gradient(135deg, #4CAF50, #8BC34A);
+  color: white;
+  border-radius: 32rpx;
+  height: 88rpx;
+  line-height: 82rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  margin-bottom: 32rpx;
+  padding: 0 32rpx;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.photo-btn:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-image {
+  width: 480rpx;
+  height: 480rpx;
+  max-width: 100%;
+  border-radius: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-lg);
+  animation: scaleIn 0.3s ease-out;
+}
+
+.photo-caption {
+  width: 100%;
+  min-height: 120rpx;
+  padding: 24rpx;
+  border: 3rpx solid var(--border-light);
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.photo-caption:focus {
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 6rpx rgba(255, 107, 157, 0.1), var(--shadow-md);
+}
+
+/* 提交按钮 */
+.submit-btn {
+  background: var(--primary-gradient);
+  color: white;
+  border-radius: 48rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.submit-btn:active::after {
+  width: 300rpx;
+  height: 300rpx;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+.submit-btn[disabled] {
+  background: var(--text-tertiary);
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+
+/* 已回答状态 */
+.already-answered {
+  background: white;
+  border-radius: 40rpx;
+  padding: 48rpx 32rpx;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.8s ease-out 0.2s both;
+}
+
+.answer-preview, .partner-answer {
+  margin-bottom: 48rpx;
+  padding-bottom: 48rpx;
+  border-bottom: 2rpx solid var(--border-light);
+  position: relative;
+}
+
+.answer-preview:last-child, .partner-answer:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.answer-label {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  margin-bottom: 24rpx;
+  font-weight: 600;
+  padding-left: 32rpx;
+  position: relative;
+}
+
+.answer-label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+}
+
+.answer-preview .answer-label::before {
+  background: var(--primary-color);
+}
+
+.partner-answer .answer-label::before {
+  background: var(--secondary-color);
+}
+
+.answer-content {
+  font-size: 32rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 24rpx;
+  padding: 24rpx;
+  background: var(--bg-tertiary);
+  border-radius: 24rpx;
+  border-left: 6rpx solid var(--primary-color);
+}
+
+.partner-answer .answer-content {
+  border-left-color: var(--secondary-color);
+}
+
+.answer-media {
+  width: 320rpx;
+  height: 320rpx;
+  max-width: 100%;
+  border-radius: 24rpx;
+  margin-top: 24rpx;
+  box-shadow: var(--shadow-md);
+}
+
+/* 等待伴侣回答 */
+.waiting-partner {
+  text-align: center;
+  padding: 80rpx 40rpx;
+  color: var(--text-secondary);
+  font-size: 32rpx;
+  background: var(--bg-tertiary);
+  border-radius: 32rpx;
+  border: 2rpx dashed var(--border-medium);
+}
+
+.waiting-partner text {
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.waiting-partner::after {
+  content: '💭';
+  font-size: 48rpx;
+  display: block;
+  margin-top: 24rpx;
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* 响应式优化 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 24rpx;
+  }
+  
+  .question-card,
+  .answer-section,
+  .already-answered {
+    padding: 32rpx 24rpx;
+    border-radius: 32rpx;
+  }
+  
+  .question-content {
+    font-size: 32rpx;
+  }
+  
+  .answer-type-selector {
+    flex-direction: column;
+    gap: 12rpx;
+  }
+  
+  .type-btn {
+    height: 80rpx;
+    line-height: 74rpx;
+  }
+  
+  .preview-image {
+    width: 400rpx;
+    height: 400rpx;
+  }
+  
+  .record-btn {
+    height: 200rpx;
+    width: 200rpx;
+    line-height: 200rpx;
+  }
+}

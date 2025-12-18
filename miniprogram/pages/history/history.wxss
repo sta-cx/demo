@@ -1,0 +1,381 @@
+/* 历史记录页面样式 - 应用新设计系统 */
+.container {
+  padding: 32rpx;
+  background: var(--bg-secondary);
+  min-height: 100vh;
+}
+
+/* 头部区域 */
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  animation: slideUp 0.6s ease-out;
+}
+
+.title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 24rpx;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 24rpx;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  background: white;
+  padding: 12rpx 24rpx;
+  border-radius: 24rpx;
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2rpx);
+  box-shadow: var(--shadow-md);
+}
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 40rpx;
+  background: white;
+  padding: 24rpx;
+  border-radius: 32rpx;
+  box-shadow: var(--shadow-md);
+  animation: slideUp 0.8s ease-out 0.2s both;
+}
+
+.filter-item {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 16rpx;
+  background: var(--bg-tertiary);
+  border-radius: 24rpx;
+  font-size: 26rpx;
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2rpx solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-gradient);
+  transition: left 0.3s ease;
+  z-index: 0;
+}
+
+.filter-item:active::before {
+  left: 0;
+}
+
+.filter-item:active {
+  color: white;
+  border-color: transparent;
+  transform: scale(0.98);
+}
+
+.filter-item text {
+  position: relative;
+  z-index: 1;
+}
+
+/* 历史记录列表 */
+.history-list {
+  margin-bottom: 40rpx;
+}
+
+.history-item {
+  background: white;
+  border-radius: 40rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.6s ease-out both;
+}
+
+.history-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6rpx;
+  height: 100%;
+  background: var(--primary-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.history-item:hover::before {
+  opacity: 1;
+}
+
+.history-item:hover {
+  transform: translateY(-4rpx);
+  box-shadow: var(--shadow-xl);
+}
+
+/* 问题区域 */
+.question-section {
+  margin-bottom: 32rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 2rpx solid var(--border-light);
+}
+
+.question-text {
+  display: block;
+  font-size: 32rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+  font-weight: 600;
+  position: relative;
+  padding-left: 24rpx;
+}
+
+.question-text::before {
+  content: '"';
+  position: absolute;
+  left: -8rpx;
+  top: -8rpx;
+  font-size: 48rpx;
+  color: var(--primary-light);
+  opacity: 0.6;
+}
+
+.question-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.category-tag {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.date {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  padding: 6rpx 12rpx;
+  background: var(--bg-tertiary);
+  border-radius: 16rpx;
+}
+
+/* 回答区域 */
+.answer-section {
+  margin-bottom: 24rpx;
+}
+
+.user-answer, .partner-answer {
+  margin-bottom: 24rpx;
+  padding: 24rpx;
+  background: var(--bg-tertiary);
+  border-radius: 24rpx;
+  border-left: 6rpx solid var(--primary-color);
+  transition: all 0.3s ease;
+}
+
+.partner-answer {
+  border-left-color: var(--secondary-color);
+}
+
+.user-answer:hover, .partner-answer:hover {
+  transform: translateX(4rpx);
+  box-shadow: var(--shadow-sm);
+}
+
+.answer-label {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  margin-bottom: 16rpx;
+  font-weight: 600;
+}
+
+.answer-content {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 16rpx;
+  word-wrap: break-word;
+}
+
+.answer-media {
+  width: 240rpx;
+  height: 240rpx;
+  max-width: 100%;
+  border-radius: 20rpx;
+  margin-bottom: 16rpx;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.answer-media:active {
+  transform: scale(0.98);
+}
+
+/* 情感分析 */
+.answer-sentiment {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 16rpx;
+  background: white;
+  border-radius: 20rpx;
+  align-self: flex-start;
+  box-shadow: var(--shadow-sm);
+}
+
+.sentiment-icon {
+  font-size: 28rpx;
+}
+
+.sentiment-text {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 160rpx 40rpx;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.empty-icon {
+  display: block;
+  font-size: 160rpx;
+  margin-bottom: 40rpx;
+  opacity: 0.6;
+  animation: heartbeat 3s ease-in-out infinite;
+}
+
+.empty-title {
+  display: block;
+  font-size: 40rpx;
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 24rpx;
+}
+
+.empty-desc {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 480rpx;
+  margin: 0 auto;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 0;
+  color: var(--text-secondary);
+  font-size: 28rpx;
+}
+
+.loading::before {
+  content: '';
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid var(--primary-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  margin-right: 20rpx;
+  animation: spin 1s linear infinite;
+}
+
+/* 时间轴样式 */
+.history-item:nth-child(odd) {
+  animation-delay: 0.1s;
+}
+
+.history-item:nth-child(even) {
+  animation-delay: 0.2s;
+}
+
+/* 响应式优化 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 24rpx;
+  }
+  
+  .title {
+    font-size: 40rpx;
+  }
+  
+  .filter-bar {
+    padding: 20rpx;
+    border-radius: 24rpx;
+  }
+  
+  .filter-item {
+    padding: 16rpx 12rpx;
+    font-size: 24rpx;
+  }
+  
+  .history-item {
+    padding: 24rpx;
+    border-radius: 32rpx;
+  }
+  
+  .question-text {
+    font-size: 30rpx;
+  }
+  
+  .answer-content {
+    font-size: 26rpx;
+  }
+  
+  .answer-media {
+    width: 200rpx;
+    height: 200rpx;
+  }
+  
+  .stats {
+    gap: 12rpx;
+  }
+  
+  .stat-item {
+    font-size: 24rpx;
+    padding: 10rpx 20rpx;
+  }
+}
