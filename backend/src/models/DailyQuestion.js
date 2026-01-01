@@ -7,6 +7,8 @@ class DailyQuestion {
     this.couple_id = data.couple_id;
     this.question_id = data.question_id;
     this.question_date = data.question_date;
+    this.question_text = data.question_text;
+    this.category = data.category;
     this.is_completed = data.is_completed;
     this.user1_answered = data.user1_answered;
     this.user2_answered = data.user2_answered;
