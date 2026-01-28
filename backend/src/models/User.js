@@ -1,5 +1,6 @@
 const { query } = require('../utils/database');
-const bcrypt = require('bcryptjs');
+// bcrypt 已在 authService 中使用，此处不再需要
+// const bcrypt = require('bcryptjs');
 
 class User {
   constructor(data) {

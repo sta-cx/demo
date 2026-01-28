@@ -13,6 +13,7 @@ const WebSocketServer = require('./utils/websocket');
 const dailyQuestionTask = require('./tasks/dailyQuestion');
 const weeklyReportTask = require('./tasks/weeklyReport');
 const monthlyReportTask = require('./tasks/monthlyReport');
+const yearlyReportTask = require('./tasks/yearlyReport');
 
 // 导入安全中间件
 const {
@@ -61,6 +62,9 @@ const coupleRouter = require('./api/couple');
 const memoriesRouter = require('./api/memories');
 const userRouter = require('./api/user');
 const aiRouter = require('./api/ai');
+const milestonesRouter = require('./api/milestones');
+const yearlyReportsRouter = require('./api/yearlyReports');
+const streaksRouter = require('./api/streaks');
 
 app.use('/api/auth', authRouter);
 app.use('/api/questions', questionsRouter);
@@ -68,6 +72,9 @@ app.use('/api/couple', coupleRouter);
 app.use('/api/memories', memoriesRouter);
 app.use('/api/user', userRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/milestones', milestonesRouter);
+app.use('/api/reports', yearlyReportsRouter);
+app.use('/api/streaks', streaksRouter);
 
 // Error handling middleware
 app.use(errorHandler);
@@ -89,18 +96,22 @@ server.listen(PORT, () => {
   // 启动定时任务
   if (process.env.NODE_ENV === 'production') {
     logger.info('Starting scheduled tasks...');
-    
+
     // 启动每日问题推送任务
     dailyQuestionTask.start();
     logger.info('Daily question task started');
-    
+
     // 启动周报生成任务
     weeklyReportTask.start();
     logger.info('Weekly report task started');
-    
+
     // 启动月报生成任务
     monthlyReportTask.start();
     logger.info('Monthly report task started');
+
+    // 启动年报生成任务
+    yearlyReportTask.start();
+    logger.info('Yearly report task started');
   } else {
     logger.info('Scheduled tasks disabled in development mode');
   }

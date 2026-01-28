@@ -1,6 +1,7 @@
 const iflowClient = require('../utils/iflowClient');
 const logger = require('../utils/logger');
-const Question = require('../models/Question');
+// Question 模型在 aiService 中不需要直接使用
+// const Question = require('../models/Question');
 
 class AIService {
   constructor() {

@@ -164,19 +164,19 @@ const createUserRateLimit = (options = {}) => {
   };
 };
 
-// 清理过期的用户限制记录
-const startUserLimitCleanup = (limits) => {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [userId, limit] of limits.entries()) {
-      if (now > limit.resetTime) {
-        limits.delete(userId);
-      }
-    }
-  }, 60000); // 每分钟清理一次
-};
+// 清理过期的用户限制记录（已注释，如需启用需要取消下方注释）
+// const startUserLimitCleanup = (limits) => {
+//   global.setInterval(() => {
+//     const now = Date.now();
+//     for (const [userId, limit] of limits.entries()) {
+//       if (now > limit.resetTime) {
+//         limits.delete(userId);
+//       }
+//     }
+//   }, 60000); // 每分钟清理一次
+// };
 
-// 启动清理任务
+// 启动清理任务（需要时取消注释）
 // startUserLimitCleanup(userLimits);
 
 module.exports = {

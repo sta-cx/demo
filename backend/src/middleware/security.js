@@ -174,7 +174,7 @@ const requestLogger = (req, res, next) => {
 };
 
 // 错误处理增强
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   // 记录错误详情
   logger.error('Request error', {
     error: err.message,

@@ -2,7 +2,8 @@ const Memory = require('../models/Memory');
 const Answer = require('../models/Answer');
 const Couple = require('../models/Couple');
 const Question = require('../models/Question');
-const analysisService = require('./analysisService');
+// analysisService 已在特定方法中使用，需要时导入
+// const analysisService = require('./analysisService');
 const aiService = require('./aiService');
 const logger = require('../utils/logger');
 
@@ -64,7 +65,7 @@ class ReportService {
       return memory;
       
     } catch (error) {
-      logger.error(`Error generating weekly report for couple ${couId}:`, error);
+      logger.error(`Error generating weekly report for couple ${coupleId}:`, error);
       throw error;
     }
   }
@@ -127,7 +128,7 @@ class ReportService {
       return memory;
       
     } catch (error) {
-      logger.error(`Error generating monthly report for couple ${couId}:`, error);
+      logger.error(`Error generating monthly report for couple ${coupleId}:`, error);
       throw error;
     }
   }

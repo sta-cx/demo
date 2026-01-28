@@ -158,7 +158,7 @@ class DailyQuestion {
       throw new Error('Couple not found');
     }
     
-    const { user1_id, user2_id } = coupleResult.rows[0];
+    const { user1_id } = coupleResult.rows[0];
     const isUser1 = userId === user1_id;
     const userField = isUser1 ? 'user1_answered' : 'user2_answered';
     
@@ -244,7 +244,7 @@ class DailyQuestion {
     
     for (const couple of couplesResult.rows) {
       try {
-        const dailyQuestion = await DailyGenerateTodayQuestion(couple.id);
+        const dailyQuestion = await this.generateTodayQuestion(couple.id);
         if (dailyQuestion) {
           results.push({
             couple_id: couple.id,
@@ -294,25 +294,6 @@ class DailyQuestion {
       return result.rows[0];
     } catch (error) {
       throw new Error(`Failed to get answer stats: ${error.message}`);
-    }
-  }
-
-  // 获取历史问题
-  static async getHistory(coupleId, limit = 30, offset = 0) {
-    const sql = `
-      SELECT dq.*, q.question_text, q.category, q.answer_type, q.choices
-      FROM daily_questions dq
-      LEFT JOIN questions q ON dq.question_id = q.id
-      WHERE dq.couple_id = $1
-      ORDER BY dq.question_date DESC, dq.created_at DESC
-      LIMIT $2 OFFSET $3
-    `;
-    
-    try {
-      const result = await query(sql, [coupleId, limit, offset]);
-      return result.rows.map(row => new DailyQuestion(row));
-    } catch (error) {
-      throw new Error(`Failed to get daily question history: ${error.message}`);
     }
   }
 

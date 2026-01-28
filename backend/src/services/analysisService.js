@@ -477,7 +477,7 @@ class AnalysisService {
     return [...new Set(recommendations)];
   }
 
-  generateReportSummary(trends, sentiment, topics, patterns) {
+  generateReportSummary(trends, sentiment, topics, _patterns) {
     const summary = [];
     
     // 趋势总结

@@ -5,6 +5,7 @@ const Couple = require('../models/Couple');
 const logger = require('../utils/logger');
 const aiService = require('./aiService');
 const analysisService = require('./analysisService');
+const streakService = require('./streakService');
 
 class QuestionService {
   /**
@@ -309,9 +310,15 @@ class QuestionService {
       
       // 异步分析回答（情感分析等）
       this.analyzeAnswerAsync(answer.id, answer_text);
-      
-      logger.info(`Answer submitted successfully: ${answer.id}`);
-      return answer;
+
+      // 记录打卡
+      const streakResult = await streakService.recordStreak(userId, coupleId);
+
+      logger.info(`Answer submitted successfully: ${answer.id}, streak: ${streakResult.streak_count}`);
+      return {
+        ...answer.toJSON(),
+        streak: streakResult
+      };
     } catch (error) {
       logger.error(`Error submitting answer:`, error);
       throw error;

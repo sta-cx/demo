@@ -69,7 +69,7 @@ class Question {
       SELECT * FROM questions 
       WHERE is_active = true
     `;
-    let params = [];
+    const params = [];
     let paramIndex = 1;
 
     if (category) {
@@ -103,7 +103,7 @@ class Question {
       SELECT * FROM questions 
       WHERE is_active = true
     `;
-    let params = [];
+    const params = [];
     let paramIndex = 1;
 
     if (category) {
@@ -170,7 +170,7 @@ class Question {
       SELECT * FROM questions 
       WHERE is_active = true AND question_text ILIKE $1
     `;
-    let params = [`%${searchTerm}%`];
+    const params = [`%${searchTerm}%`];
     let paramIndex = 2;
 
     if (category) {
@@ -280,7 +280,7 @@ class Question {
       SELECT * FROM questions 
       WHERE is_active = true
     `;
-    let params = [];
+    const params = [];
     let paramIndex = 1;
 
     if (category) {
