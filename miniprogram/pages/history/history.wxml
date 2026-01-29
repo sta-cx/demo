@@ -1,0 +1,132 @@
+<view class="container">
+  <!-- 头部信息 -->
+  <view class="header">
+    <text class="title">💕 历史记录</text>
+    <view class="stats" wx:if="{{stats}}">
+      <view class="stat-item">
+        <text>💬 {{stats.total_answers}} 条回答</text>
+      </view>
+      <view class="stat-item">
+        <text>😊 {{stats.positive_answers}} 条积极</text>
+      </view>
+      <view class="stat-item" wx:if="{{stats.completion_rate}}">
+        <text>📈 {{stats.completion_rate}}% 完成率</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <picker 
+      mode="date" 
+      value="{{filterDate}}" 
+      bindchange="onDateChange"
+      start="{{minDate}}"
+      end="{{maxDate}}"
+    >
+      <view class="filter-item">
+        <text>📅 {{filterDate || '选择日期'}}</text>
+      </view>
+    </picker>
+    
+    <picker 
+      bindchange="onCategoryChange" 
+      value="{{categoryIndex}}" 
+      range="{{categories}}"
+      range-key="label"
+    >
+      <view class="filter-item">
+        <text>🏷️ {{categories[categoryIndex].label}}</text>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 历史记录列表 -->
+  <view class="history-list" wx:if="{{answers.length > 0}}">
+    <view 
+      class="history-item" 
+      wx:for="{{answers}}" 
+      wx:key="id"
+      bindtap="viewDetail"
+      data-id="{{item.id}}"
+      hover-class="item-hover"
+    >
+      <!-- 问题部分 -->
+      <view class="question-section">
+        <text class="question-text">{{item.question_text}}</text>
+        <view class="question-meta">
+          <view class="category-tag tag tag-primary">
+            <text>{{item.category}}</text>
+          </view>
+          <view class="date">
+            <text>🕐 {{item.answer_date}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 回答部分 -->
+      <view class="answer-section">
+        <!-- 我的回答 -->
+        <view class="user-answer">
+          <text class="answer-label">💭 我的回答</text>
+          <view class="answer-content">
+            <text>{{item.answer_text}}</text>
+          </view>
+          <image 
+            wx:if="{{item.media_url}}" 
+            class="answer-media" 
+            src="{{item.media_url}}" 
+            mode="aspectFill"
+            bindtap="previewPhoto"
+            data-url="{{item.media_url}}"
+            catchtap="stopPropagation"
+          />
+          <view class="answer-sentiment" wx:if="{{item.sentiment}}">
+            <text class="sentiment-icon">
+              {{item.sentiment === 'positive' ? '😊' : item.sentiment === 'negative' ? '😔' : '😐'}}
+            </text>
+            <text class="sentiment-text">{{item.sentiment}}</text>
+          </view>
+        </view>
+        
+        <!-- 伴侣的回答 -->
+        <view class="partner-answer" wx:if="{{item.partner_answer}}">
+          <text class="answer-label">💝 TA的回答</text>
+          <view class="answer-content">
+            <text>{{item.partner_answer.answer_text}}</text>
+          </view>
+          <image 
+            wx:if="{{item.partner_answer.media_url}}" 
+            class="answer-media" 
+            src="{{item.partner_answer.media_url}}" 
+            mode="aspectFill"
+            bindtap="previewPhoto"
+            data-url="{{item.partner_answer.media_url}}"
+            catchtap="stopPropagation"
+          />
+          <view class="answer-sentiment" wx:if="{{item.partner_answer.sentiment}}">
+            <text class="sentiment-icon">
+              {{item.partner_answer.sentiment === 'positive' ? '😊' : item.partner_answer.sentiment === 'negative' ? '😔' : '😐'}}
+            </text>
+            <text class="sentiment-text">{{item.partner_answer.sentiment}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:else>
+    <text class="empty-icon">📝</text>
+    <text class="empty-title">暂无记录</text>
+    <text class="empty-desc">开始回答问题，记录你们的点点滴滴</text>
+    <button class="btn btn-primary" bindtap="goToAnswer" style="margin-top: 40rpx;">
+      <text>💝 开始回答</text>
+    </button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>

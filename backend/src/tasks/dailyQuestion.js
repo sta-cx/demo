@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const QuestionService = require('../services/questionService');
+const aiService = require('../services/aiService');
 const logger = require('../utils/logger');
 
 class DailyQuestionTask {
@@ -69,15 +70,28 @@ class DailyQuestionTask {
     try {
       logger.info('Starting daily question generation...');
       
+      // 检查AI服务健康状态
+      const aiHealth = await aiService.healthCheck();
+      if (!aiHealth.api.available) {
+        logger.warn('AI service is not available, using fallback question generation');
+      }
+      
       const startTime = Date.now();
       const result = await QuestionService.generateDailyQuestionsForAll();
       const duration = Date.now() - startTime;
+      
+      // 获取AI使用统计
+      const aiStats = aiService.getUsageStats();
       
       logger.info('Daily question generation completed', {
         duration: `${duration}ms`,
         total_processed: result.total_processed,
         success_count: result.success.length,
-        error_count: result.errors.length
+        error_count: result.errors.length,
+        ai_service: {
+          available: aiHealth.api.available,
+          stats: aiStats
+        }
       });
 
       // 如果有错误，记录详细信息

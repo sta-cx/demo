@@ -295,6 +295,25 @@ class DailyQuestion {
     }
   }
 
+  // 获取历史问题
+  static async getHistory(coupleId, limit = 30, offset = 0) {
+    const sql = `
+      SELECT dq.*, q.question_text, q.category, q.answer_type, q.choices
+      FROM daily_questions dq
+      LEFT JOIN questions q ON dq.question_id = q.id
+      WHERE dq.couple_id = $1
+      ORDER BY dq.question_date DESC, dq.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+    
+    try {
+      const result = await query(sql, [coupleId, limit, offset]);
+      return result.rows.map(row => new DailyQuestion(row));
+    } catch (error) {
+      throw new Error(`Failed to get daily question history: ${error.message}`);
+    }
+  }
+
   // 删除每日问题
   static async delete(id) {
     const sql = 'DELETE FROM daily_questions WHERE id = $1 RETURNING *';
