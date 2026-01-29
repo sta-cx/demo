@@ -57,8 +57,11 @@ export const questions = {
 
 // 情侣相关
 export const couple = {
-  bind(phone) {
-    return api.post('/couple/bind', { phone });
+  getInfo() {
+    return api.get('/couple/info');
+  },
+  bind(phone, nickname) {
+    return api.post('/couple/bind', { phone, nickname });
   }
 };
 
