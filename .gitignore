@@ -153,3 +153,4 @@ couple_daily_app_doc.txt
 
 # Backend specific
 backend/.env
+send_email.py
