@@ -242,7 +242,7 @@ class DailyQuestion {
     
     for (const couple of couplesResult.rows) {
       try {
-        const dailyQuestion = await DailyGenerateTodayQuestion(couple.id);
+        const dailyQuestion = await DailyQuestion.generateTodayQuestion(couple.id);
         if (dailyQuestion) {
           results.push({
             couple_id: couple.id,
