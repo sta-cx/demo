@@ -46,9 +46,9 @@ router.post('/send-code', smsLimiter, async (req, res) => {
     await redis.incr(attemptKey);
     await redis.expire(attemptKey, 3600);
 
-    // Log code only in non-production environments
+    // Log code only in non-production environments (debug level for sensitive info)
     if (process.env.NODE_ENV !== 'production') {
-      logger.info(`[DEV] Verification code for ${phone}: ${code}`);
+      logger.debug(`[DEV] Verification code for ${phone}: ${code}`);
     }
 
     // TODO: Implement SMS service integration
@@ -125,6 +125,12 @@ router.post('/login', authLimiter, async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    // Log successful login
+    logger.info(`User ${userData.id} logged in successfully`, {
+      userId: userData.id,
+      phone: userData.phone
+    });
 
     res.json({
       token,
