@@ -2,6 +2,9 @@ const cron = require('node-cron');
 const QuestionService = require('../services/questionService');
 const aiService = require('../services/aiService');
 const logger = require('../utils/logger');
+const wechatNotifier = require('../utils/wechatNotifier');
+const Couple = require('../models/Couple');
+const User = require('../models/User');
 
 class DailyQuestionTask {
   constructor() {
@@ -116,18 +119,54 @@ class DailyQuestionTask {
    */
   async sendNotifications(result) {
     try {
-      // 这里可以集成微信小程序消息推送
-      // 或者发送邮件/短信通知
-      
-      if (result.errors.length > 0) {
-        // 发送部分成功通知
-        logger.warn(`Daily question task completed with ${result.errors.length} errors`);
-      } else {
-        // 发送全部成功通知
-        logger.info('Daily question task completed successfully');
+      if (!process.env.WECHAT_APPID || !process.env.WECHAT_SECRET) {
+        logger.info('WeChat notification not configured, skipping');
+        return;
       }
+
+      const wechatHealth = await wechatNotifier.healthCheck();
+      if (!wechatHealth.available) {
+        logger.warn('WeChat notification service not available');
+        return;
+      }
+
+      // 获取所有成功生成问题的情侣及其问题
+      for (const item of result.success) {
+        try {
+          const couple = await Couple.findById(item.coupleId);
+          if (!couple) continue;
+
+          // 获取两个用户的微信openid
+          const user1 = await User.findById(couple.user1_id);
+          const user2 = await User.findById(couple.user2_id);
+
+          const users = [user1, user2].filter(u => u && u.wechat_openid);
+
+          if (users.length === 0) {
+            logger.warn(`No WeChat openid found for couple ${item.coupleId}`);
+            continue;
+          }
+
+          // 发送微信推送
+          const notificationResult = await wechatNotifier.sendDailyQuestionToUsers(
+            users,
+            item.questionText,
+            item.questionDate
+          );
+
+          logger.info('WeChat notification sent', {
+            coupleId: item.coupleId,
+            success: notificationResult.success,
+            failed: notificationResult.failed
+          });
+
+        } catch (error) {
+          logger.error(`Failed to send notification for couple ${item.coupleId}:`, error);
+        }
+      }
+
     } catch (error) {
-      logger.error('Error sending notifications:', error);
+      logger.error('Error sending WeChat notifications:', error);
     }
   }
 
