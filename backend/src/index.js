@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000;
 const logger = require('./utils/logger');
 const WebSocketServer = require('./utils/websocket');
 const { closeRedisClient } = require('./utils/redis');
+const { handleError, handleNotFound } = require('./utils/errorHandler');
 
 // 导入定时任务
 const dailyQuestionTask = require('./tasks/dailyQuestion');
@@ -20,7 +21,6 @@ const {
   securityHeaders,
   validateInput,
   requestLogger,
-  errorHandler,
   sqlInjectionProtection,
   xssProtection
 } = require('./middleware/security');
@@ -48,8 +48,8 @@ app.use(xssProtection);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
@@ -70,13 +70,11 @@ app.use('/api/memories', memoriesRouter);
 app.use('/api/user', userRouter);
 app.use('/api/ai', aiRouter);
 
-// Error handling middleware
-app.use(errorHandler);
+// 404 handler - must be before error handler
+app.use(handleNotFound);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+// Error handling middleware - must be last
+app.use(handleError);
 
 server.listen(PORT, () => {
   // 初始化WebSocket服务器
