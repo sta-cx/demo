@@ -92,7 +92,7 @@ class Answer {
   // 获取情侣的回答列表
   static async findByCouple(coupleId, limit = 30, offset = 0) {
     const sql = `
-      SELECT a.*, 
+      SELECT a.*,
              u.nickname as user_nickname, u.avatar_url as user_avatar_url,
              q.category as question_category
       FROM answers a
@@ -102,12 +102,35 @@ class Answer {
       ORDER BY a.answer_date DESC, a.created_at DESC
       LIMIT $2 OFFSET $3
     `;
-    
+
     try {
       const result = await query(sql, [coupleId, limit, offset]);
       return result.rows.map(row => new Answer(row));
     } catch (error) {
       throw new Error(`Failed to find answers by couple: ${error.message}`);
+    }
+  }
+
+  // 获取情侣在指定天数内的回答（带完整JOIN数据，避免N+1查询）
+  static async findByCoupleWithDays(coupleId, days = 30) {
+    const sql = `
+      SELECT a.*,
+             u.nickname as user_nickname, u.avatar_url as user_avatar_url,
+             q.category as question_category,
+             q.question_text as original_question_text
+      FROM answers a
+      LEFT JOIN users u ON a.user_id = u.id
+      LEFT JOIN questions q ON a.question_id = q.id
+      WHERE a.couple_id = $1
+        AND a.answer_date >= CURRENT_DATE - INTERVAL '${days} days'
+      ORDER BY a.answer_date DESC, a.created_at DESC
+    `;
+
+    try {
+      const result = await query(sql, [coupleId]);
+      return result.rows.map(row => new Answer(row));
+    } catch (error) {
+      throw new Error(`Failed to find answers by couple with days filter: ${error.message}`);
     }
   }
 

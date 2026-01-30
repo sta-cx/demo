@@ -5,23 +5,22 @@ const Question = require('../models/Question');
 class AnalysisService {
   /**
    * 获取情侣的问题回答历史
+   * 使用 JOIN 查询避免 N+1 问题
    */
   async getCoupleHistory(coupleId, days = 30) {
     try {
-      const history = await Answer.findByCouple(coupleId, days);
-      
-      // 丰富历史数据
-      const enrichedHistory = await Promise.all(
-        history.map(async (answer) => {
-          const question = await Question.findById(answer.question_id);
-          return {
-            ...answer,
-            category: question?.category || 'daily',
-            question_text: question?.question_text || answer.question_text
-          };
-        })
-      );
-      
+      // 使用带 JOIN 的查询一次性获取所有数据，避免 N+1 查询
+      const history = await Answer.findByCoupleWithDays(coupleId, days);
+
+      // 将 JOIN 的数据映射到正确的字段
+      const enrichedHistory = history.map((answer) => {
+        return {
+          ...answer,
+          category: answer.question_category || 'daily',
+          question_text: answer.original_question_text || answer.question_text
+        };
+      });
+
       return enrichedHistory;
     } catch (error) {
       logger.error('Failed to get couple history', { coupleId, error: error.message });
