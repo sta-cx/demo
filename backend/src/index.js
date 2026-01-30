@@ -8,6 +8,7 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 const logger = require('./utils/logger');
 const WebSocketServer = require('./utils/websocket');
+const { closeRedisClient } = require('./utils/redis');
 
 // 导入定时任务
 const dailyQuestionTask = require('./tasks/dailyQuestion');
@@ -80,24 +81,24 @@ app.use((req, res) => {
 server.listen(PORT, () => {
   // 初始化WebSocket服务器
   const wsServer = new WebSocketServer(server);
-  
+
   // Set WebSocket server instance for questions route
   questionsRouter.setWebSocketServer(wsServer);
   logger.info(`Server is running on port ${PORT}`);
   logger.info(`Environment: ${process.env.NODE_ENV}`);
-  
+
   // 启动定时任务
   if (process.env.NODE_ENV === 'production') {
     logger.info('Starting scheduled tasks...');
-    
+
     // 启动每日问题推送任务
     dailyQuestionTask.start();
     logger.info('Daily question task started');
-    
+
     // 启动周报生成任务
     weeklyReportTask.start();
     logger.info('Weekly report task started');
-    
+
     // 启动月报生成任务
     monthlyReportTask.start();
     logger.info('Monthly report task started');
@@ -105,5 +106,33 @@ server.listen(PORT, () => {
     logger.info('Scheduled tasks disabled in development mode');
   }
 });
+
+// Graceful shutdown handler
+const gracefulShutdown = async (signal) => {
+  logger.info(`${signal} received, starting graceful shutdown...`);
+
+  // Stop accepting new connections
+  server.close(() => {
+    logger.info('HTTP server closed');
+  });
+
+  // Close Redis connection
+  try {
+    await closeRedisClient();
+    logger.info('Redis connection closed');
+  } catch (error) {
+    logger.error('Error closing Redis connection', { error: error.message });
+  }
+
+  // Give a brief timeout for cleanup
+  setTimeout(() => {
+    logger.info('Graceful shutdown completed');
+    process.exit(0);
+  }, 1000);
+};
+
+// Handle shutdown signals
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 module.exports = app;
