@@ -1,8 +1,15 @@
 const rateLimit = require('express-rate-limit');
 const logger = require('../utils/logger');
+const { LRUCache } = require('lru-cache');
 
-// 用户限制记录存储
-const userLimits = new Map();
+// 用户限制记录存储 - 使用 LRU 缓存防止内存泄漏
+// 自动清理过期条目，最大存储 10000 个用户记录
+const userLimits = new LRUCache({
+  max: 10000, // 最多存储 10000 个用户的限制记录
+  ttl: 15 * 60 * 1000, // 15分钟自动过期
+  updateAgeOnGet: true, // 访问时更新过期时间
+  updateAgeOnHas: true, // 检查存在时更新过期时间
+});
 
 // 通用速率限制配置
 const createRateLimit = (options = {}) => {
@@ -108,76 +115,69 @@ const memoryLimiter = createRateLimit({
 const createUserRateLimit = (options = {}) => {
   return (req, res, next) => {
     const userId = req.user?.userId;
-    
+
     if (!userId) {
       // 如果没有用户ID，使用IP限制
       return generalLimiter(req, res, next);
     }
-    
+
     const now = Date.now();
     const windowMs = options.windowMs || 15 * 60 * 1000;
     const max = options.max || 100;
-    
-    // 获取或创建用户限制记录
-    if (!userLimits.has(userId)) {
-      userLimits.set(userId, {
+
+    // 获取或创建用户限制记录 (LRUCache 会自动处理过期)
+    let userLimit = userLimits.get(userId);
+
+    if (!userLimit) {
+      userLimit = {
         count: 0,
         resetTime: now + windowMs
-      });
+      };
     }
-    
-    const userLimit = userLimits.get(userId);
-    
+
     // 检查是否需要重置
     if (now > userLimit.resetTime) {
-      userLimit.count = 0;
-      userLimit.resetTime = now + windowMs;
+      userLimit = {
+        count: 0,
+        resetTime: now + windowMs
+      };
     }
-    
-    // 增加计数
-    userLimit.count++;
-    
+
+    // 增加计数（创建新对象避免引用问题）
+    const updatedLimit = {
+      count: userLimit.count + 1,
+      resetTime: userLimit.resetTime
+    };
+
+    // 更新缓存
+    userLimits.set(userId, updatedLimit);
+
     // 检查是否超过限制
-    if (userLimit.count > max) {
+    if (updatedLimit.count > max) {
       logger.warn('User rate limit exceeded', {
         userId,
-        count: userLimit.count,
+        count: updatedLimit.count,
         max,
         url: req.url
       });
-      
+
       return res.status(429).json({
         error: 'Too many requests',
         code: 'USER_RATE_LIMIT_EXCEEDED',
-        retryAfter: Math.ceil((userLimit.resetTime - now) / 1000)
+        retryAfter: Math.ceil((updatedLimit.resetTime - now) / 1000)
       });
     }
-    
+
     // 设置响应头
     res.set({
       'X-RateLimit-Limit': max,
-      'X-RateLimit-Remaining': Math.max(0, max - userLimit.count),
-      'X-RateLimit-Reset': new Date(userLimit.resetTime).toISOString()
+      'X-RateLimit-Remaining': Math.max(0, max - updatedLimit.count),
+      'X-RateLimit-Reset': new Date(updatedLimit.resetTime).toISOString()
     });
-    
+
     next();
   };
 };
-
-// 清理过期的用户限制记录
-const startUserLimitCleanup = (limits) => {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [userId, limit] of limits.entries()) {
-      if (now > limit.resetTime) {
-        limits.delete(userId);
-      }
-    }
-  }, 60000); // 每分钟清理一次
-};
-
-// 启动清理任务
-// startUserLimitCleanup(userLimits);
 
 module.exports = {
   generalLimiter,
