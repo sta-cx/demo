@@ -4,6 +4,7 @@
  */
 
 const logger = require('./logger');
+const levenshtein = require('fast-levenshtein');
 
 // Positive and negative sentiment keywords
 const POSITIVE_WORDS = ['开心', '快乐', '幸福', '爱', '喜欢', '美好', '棒', '好', '满意', '激动', '兴奋', '愉快', '甜蜜'];
@@ -67,29 +68,34 @@ function extractKeywords(text, maxKeywords = 5) {
 }
 
 /**
- * Calculate text similarity using Jaccard similarity
+ * Calculate text similarity using Levenshtein distance
  * @param {string} text1 - First text
  * @param {string} text2 - Second text
  * @returns {number} Similarity score (0-1)
  */
 function calculateTextSimilarity(text1, text2) {
-  if (!text1 || !text2) return 0;
+  if (!text1 && !text2) return 1; // Both empty/null = identical
+  if (!text1 || !text2) return 0;  // One empty/null = no similarity
 
   // Normalize texts
   const normalized1 = normalizeText(text1);
   const normalized2 = normalizeText(text2);
 
-  // Split into characters
-  const chars1 = normalized1.split('');
-  const chars2 = normalized2.split('');
+  // Handle empty strings after normalization
+  if (normalized1.length === 0 && normalized2.length === 0) return 1;
+  if (normalized1.length === 0 || normalized2.length === 0) return 0;
 
-  // Calculate Jaccard similarity
-  const intersection = chars1.filter(char => chars2.includes(char));
-  const union = [...new Set([...chars1, ...chars2])];
+  // Calculate Levenshtein distance
+  const distance = levenshtein.get(normalized1, normalized2);
 
-  if (union.length === 0) return 0;
+  // Calculate similarity based on the maximum length
+  const maxLength = Math.max(normalized1.length, normalized2.length);
 
-  return intersection.length / union.length;
+  // Convert distance to similarity (0-1)
+  // Similarity = 1 - (distance / maxLength)
+  const similarity = 1 - (distance / maxLength);
+
+  return Math.max(0, Math.min(1, similarity));
 }
 
 /**
