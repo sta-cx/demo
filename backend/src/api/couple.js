@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const CoupleService = require('../services/coupleService');
 const logger = require('../utils/logger');
+const { whitelistFilter, whitelists } = require('../utils/validator');
 
 /**
  * 获取情侣信息
@@ -163,15 +164,11 @@ router.post('/bind', authMiddleware, async (req, res) => {
 router.put('/update', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { 
-      couple_id,
-      couple_name,
-      ...updates 
-    } = req.body;
-    
+    const { couple_id } = req.body;
+
     // 验证必填字段
     if (!couple_id) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Couple ID is required',
         code: 'MISSING_COUPLE_ID'
       });
@@ -180,17 +177,29 @@ router.put('/update', authMiddleware, async (req, res) => {
     // 验证用户是否是情侣中的一方
     const couple = await CoupleService.getCoupleByUserId(userId);
     if (!couple || couple.id !== couple_id) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'You are not part of this couple',
         code: 'NOT_COUPLE_MEMBER'
       });
     }
 
-    // 更新情侣信息
-    const updatedCouple = await CoupleService.updateCouple(couple_id, {
-      couple_name: couple_name || updates.couple_name,
-      ...updates
+    // 使用白名单过滤输入，防止mass assignment攻击
+    const updates = whitelistFilter(req.body, whitelists.couple, {
+      stripUndefined: true,
+      stripNull: false,
+      stripEmptyString: false
     });
+
+    // 如果没有有效的更新字段
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        error: 'No valid fields to update',
+        code: 'NO_VALID_FIELDS'
+      });
+    }
+
+    // 更新情侣信息
+    const updatedCouple = await CoupleService.updateCouple(couple_id, updates);
 
     logger.info(`Couple updated: ${couple_id}`);
 
@@ -200,7 +209,7 @@ router.put('/update', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     logger.error('Update couple error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update couple',
       code: 'INTERNAL_ERROR'
     });
