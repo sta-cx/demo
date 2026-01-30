@@ -1,6 +1,7 @@
 // backend/src/utils/aiFallback.js
 const Question = require('../models/Question');
 const logger = require('./logger');
+const { simpleSentimentAnalysis, analyzeSentimentWithFallback: sentimentAnalyzerFallback } = require('./sentimentAnalyzer');
 
 class AIFallback {
   /**
@@ -61,29 +62,7 @@ class AIFallback {
    * 情感分析的降级策略
    */
   static async analyzeSentimentWithFallback(text, primaryAI, secondaryAI) {
-    // 第一层：心流API
-    try {
-      return await primaryAI.analyzeSentiment(text);
-    } catch (error) {
-      logger.warn('Primary AI sentiment analysis failed, trying Ollama...', {
-        error: error.message
-      });
-    }
-
-    // 第二层：Ollama本地
-    try {
-      const ollamaAvailable = await secondaryAI.isAvailable();
-      if (ollamaAvailable) {
-        return await secondaryAI.analyzeSentiment(text);
-      }
-    } catch (error) {
-      logger.warn('Ollama sentiment analysis failed, using simple analysis...', {
-        error: error.message
-      });
-    }
-
-    // 第三层：简单关键词分析
-    return this.simpleSentimentAnalysis(text);
+    return await sentimentAnalyzerFallback(text, primaryAI, secondaryAI);
   }
 
   /**
@@ -171,41 +150,6 @@ class AIFallback {
     }
 
     return basePrompt;
-  }
-
-  /**
-   * 简单情感分析
-   */
-  static simpleSentimentAnalysis(text) {
-    if (!text) return null;
-
-    const positiveWords = ['开心', '快乐', '幸福', '爱', '喜欢', '美好', '棒', '好', '满意'];
-    const negativeWords = ['难过', '伤心', '生气', '讨厌', '糟糕', '差', '不好', '失望'];
-
-    const positiveCount = positiveWords.filter(word => text.includes(word)).length;
-    const negativeCount = negativeWords.filter(word => text.includes(word)).length;
-
-    let sentiment = 'neutral';
-    let score = 50;
-
-    if (positiveCount > negativeCount) {
-      sentiment = 'positive';
-      score = Math.min(50 + positiveCount * 10, 100);
-    } else if (negativeCount > positiveCount) {
-      sentiment = 'negative';
-      score = Math.max(50 - negativeCount * 10, 0);
-    }
-
-    const keywords = text.replace(/[，。！？；：""''（）《》【】、]/g, ' ')
-      .split(/\s+/)
-      .filter(word => word.length > 1)
-      .slice(0, 5);
-
-    return {
-      sentiment,
-      sentiment_score: score,
-      keywords
-    };
   }
 }
 

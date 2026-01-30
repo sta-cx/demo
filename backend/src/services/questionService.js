@@ -5,6 +5,7 @@ const Couple = require('../models/Couple');
 const logger = require('../utils/logger');
 const aiService = require('./aiService');
 const analysisService = require('./analysisService');
+const { simpleSentimentAnalysis, checkQuestionDuplicate, calculateTextSimilarity } = require('../utils/sentimentAnalyzer');
 
 class QuestionService {
   /**
@@ -223,25 +224,7 @@ class QuestionService {
    * @returns {boolean} 是否重复
    */
   static checkQuestionDuplicate(questionText, usedTexts) {
-    if (!usedTexts || usedTexts.length === 0) {
-      return false;
-    }
-    
-    // 简单的文本相似度检查
-    const normalizedNew = questionText.replace(/[？?。！!，,]/g, '').trim().toLowerCase();
-    
-    return usedTexts.some(usedText => {
-      const normalizedUsed = usedText.replace(/[？?。！!，,]/g, '').trim().toLowerCase();
-      
-      // 检查是否完全相同
-      if (normalizedNew === normalizedUsed) {
-        return true;
-      }
-      
-      // 检查相似度（简单的字符重叠度）
-      const similarity = this.calculateTextSimilarity(normalizedNew, normalizedUsed);
-      return similarity > 0.8; // 80%相似度阈值
-    });
+    return checkQuestionDuplicate(questionText, usedTexts);
   }
 
   /**
@@ -251,13 +234,7 @@ class QuestionService {
    * @returns {number} 相似度（0-1）
    */
   static calculateTextSimilarity(text1, text2) {
-    const words1 = text1.split('');
-    const words2 = text2.split('');
-    
-    const intersection = words1.filter(word => words2.includes(word));
-    const union = [...new Set([...words1, ...words2])];
-    
-    return intersection.length / union.length;
+    return calculateTextSimilarity(text1, text2);
   }
 
   /**
@@ -353,36 +330,7 @@ class QuestionService {
    * @returns {Object} 分析结果
    */
   static simpleSentimentAnalysis(text) {
-    if (!text) return null;
-    
-    const positiveWords = ['开心', '快乐', '幸福', '爱', '喜欢', '美好', '棒', '好', '满意'];
-    const negativeWords = ['难过', '伤心', '生气', '讨厌', '糟糕', '差', '不好', '失望'];
-    
-    const positiveCount = positiveWords.filter(word => text.includes(word)).length;
-    const negativeCount = negativeWords.filter(word => text.includes(word)).length;
-    
-    let sentiment = 'neutral';
-    let score = 50;
-    
-    if (positiveCount > negativeCount) {
-      sentiment = 'positive';
-      score = Math.min(50 + positiveCount * 10, 100);
-    } else if (negativeCount > positiveCount) {
-      sentiment = 'negative';
-      score = Math.max(50 - negativeCount * 10, 0);
-    }
-    
-    // 提取关键词
-    const keywords = text.replace(/[，。！？；：""''（）《》【】、]/g, ' ')
-      .split(/\s+/)
-      .filter(word => word.length > 1)
-      .slice(0, 5);
-    
-    return {
-      sentiment,
-      sentiment_score: score,
-      keywords
-    };
+    return simpleSentimentAnalysis(text);
   }
 
   /**
