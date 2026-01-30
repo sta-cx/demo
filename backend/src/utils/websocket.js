@@ -39,15 +39,7 @@ class WebSocketServer {
 
       // 查找用户所属的情侣
       const Couple = require('../models/Couple')
-      const couple = await Couple.findOne({
-        where: {
-          [require('sequelize').Op.or]: [
-            { user1_id: userId },
-            { user2_id: userId }
-          ],
-          status: 'active'
-        }
-      })
+      const couple = await Couple.findByUserId(userId)
 
       if (!couple) {
         ws.close(1008, 'No active couple found')
