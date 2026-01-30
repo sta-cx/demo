@@ -135,7 +135,7 @@ class Couple {
     }
 
     const sql = `
-      UPDATE couples 
+      UPDATE couples
       SET ${fields.join(', ')}, updated_at = NOW()
       WHERE id = $${paramIndex}
       RETURNING *
@@ -152,7 +152,81 @@ class Couple {
     } catch (error) {
       throw new Error(`Failed to update couple: ${error.message}`);
     }
-  ]
-});
+  }
+
+  // 根据用户查找活跃情侣关系
+  static async findOne(where) {
+    const conditions = [];
+    const values = [];
+    let paramIndex = 1;
+
+    // 构建WHERE条件
+    if (where.user1_id) {
+      conditions.push(`user1_id = $${paramIndex}`);
+      values.push(where.user1_id);
+      paramIndex++;
+    }
+    if (where.user2_id) {
+      conditions.push(`user2_id = $${paramIndex}`);
+      values.push(where.user2_id);
+      paramIndex++;
+    }
+    if (where.is_active !== undefined) {
+      conditions.push(`status = $${paramIndex}`);
+      values.push(where.is_active ? 'active' : 'inactive');
+      paramIndex++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `SELECT * FROM couples ${whereClause} LIMIT 1`;
+
+    try {
+      const result = await query(sql, values);
+      if (result.rows.length === 0) {
+        return null;
+      }
+      return new Couple(result.rows[0]);
+    } catch (error) {
+      throw new Error(`Failed to find couple: ${error.message}`);
+    }
+  }
+
+  // 根据ID查找（别名，兼容Sequelize风格）
+  static async findByPk(id) {
+    return Couple.findById(id);
+  }
+
+  // 检查用户是否已有活跃关系
+  static async findActiveByUserId(userId) {
+    const sql = `
+      SELECT * FROM couples
+      WHERE (user1_id = $1 OR user2_id = $1) AND status = 'active'
+    `;
+
+    try {
+      const result = await query(sql, [userId]);
+      if (result.rows.length === 0) {
+        return null;
+      }
+      return new Couple(result.rows[0]);
+    } catch (error) {
+      throw new Error(`Failed to find active couple: ${error.message}`);
+    }
+  }
+
+  // 转换为JSON对象
+  toJSON() {
+    return {
+      id: this.id,
+      user1_id: this.user1_id,
+      user2_id: this.user2_id,
+      relationship_start_date: this.relationship_start_date,
+      couple_name: this.couple_name,
+      status: this.status,
+      created_at: this.created_at,
+      updated_at: this.updated_at
+    };
+  }
+}
 
 module.exports = Couple;

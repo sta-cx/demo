@@ -49,7 +49,7 @@ class User {
   // 根据手机号查找用户
   static async findByPhone(phone) {
     const sql = 'SELECT * FROM users WHERE phone = $1';
-    
+
     try {
       const result = await query(sql, [phone]);
       if (result.rows.length === 0) {
@@ -59,6 +59,11 @@ class User {
     } catch (error) {
       throw new Error(`Failed to find user by phone: ${error.message}`);
     }
+  }
+
+  // findByPk - findById的别名，用于兼容Sequelize风格调用
+  static async findByPk(id) {
+    return User.findById(id);
   }
 
   // 更新用户信息

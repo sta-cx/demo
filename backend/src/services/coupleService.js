@@ -1,4 +1,5 @@
 const { Couple, User } = require('../models');
+const { query } = require('../utils/database');
 
 class CoupleService {
   /**
@@ -6,21 +7,8 @@ class CoupleService {
    */
   static async getCoupleByUserId(userId) {
     try {
-      const couple = await Couple.findOne({
-        where: {
-          [Sequelize.Op.or]: [
-            { user1_id: userId },
-            { user2_id: userId }
-          ],
-          is_active: true
-        }
-      });
-
-      if (!couple) {
-        return null;
-      }
-
-      return couple.toJSON();
+      const couple = await Couple.findByUserId(userId);
+      return couple ? couple.toJSON() : null;
     } catch (error) {
       console.error('Get couple by userId error:', error);
       throw error;
@@ -30,49 +18,42 @@ class CoupleService {
   /**
    * 绑定情侣关系
    */
-  static async bindCouple(user1Id, user2Id, coupleName, user1Phone, user2Phone) {
+  static async bindCouple(user1Id, user2Id, coupleName) {
     try {
-      // 检查用户是否已有活跃的情侣关系
-      const existingCouple1 = await Couple.findOne({
-        where: {
-          user1_id: user1Id,
-          is_active: true
-        }
-      });
-
-      const existingCouple2 = await Couple.findOne({
-        where: {
-          user2_id: user2Id,
-          is_active: true
-        }
-      });
-
-      if (existingCouple1 || existingCouple2) {
-        throw new Error('User already has an active couple relationship');
-      }
-
       // 检查是否尝试与自己绑定
       if (user1Id === user2Id) {
         throw new Error('Cannot bind with yourself');
       }
 
-      // 检查用户是否存在
-      const user1 = await User.findByPk(user1Id);
-      const user2 = await User.findByPk(user2Id);
+      // 检查用户1是否已有活跃的情侣关系
+      const existingCouple1 = await Couple.findActiveByUserId(user1Id);
+      if (existingCouple1) {
+        throw new Error('User already has an active couple relationship');
+      }
 
-      if (!user1 || !user2) {
+      // 检查用户2是否已有活跃的情侣关系
+      const existingCouple2 = await Couple.findActiveByUserId(user2Id);
+      if (existingCouple2) {
+        throw new Error('Partner already has an active couple relationship');
+      }
+
+      // 检查用户是否存在
+      const user1 = await User.findById(user1Id);
+      const user2 = await User.findById(user2Id);
+
+      if (!user1) {
         throw new Error('User not found');
+      }
+      if (!user2) {
+        throw new Error('Partner not found');
       }
 
       // 创建情侣关系
       const couple = await Couple.create({
-        couple_name: coupleName,
         user1_id: user1Id,
         user2_id: user2Id,
-        user1_phone: user1Phone,
-        user2_phone: user2Phone,
-        start_date: new Date(),
-        is_active: true
+        relationship_start_date: new Date(),
+        couple_name: coupleName
       });
 
       return couple.toJSON();
@@ -87,12 +68,10 @@ class CoupleService {
    */
   static async updateCouple(coupleId, updates) {
     try {
-      const couple = await Couple.findByPk(coupleId);
+      const couple = await Couple.update(coupleId, updates);
       if (!couple) {
         throw new Error('Couple not found');
       }
-
-      await couple.update(updates);
       return couple.toJSON();
     } catch (error) {
       console.error('Update couple error:', error);
@@ -105,42 +84,40 @@ class CoupleService {
    */
   static async getCoupleStats(coupleId) {
     try {
-      const couple = await Couple.findByPk(coupleId);
+      const couple = await Couple.findById(coupleId);
       if (!couple) {
         throw new Error('Couple not found');
       }
 
       const { Answer } = require('../models/Answer');
-      const startDate = couple.start_date;
+      const startDate = couple.relationship_start_date;
       const now = new Date();
-      
+
       // 计算在一起的天数
       const daysTogether = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
 
       // 计算总回答数
-      const totalAnswers = await Answer.count({
-        where: {
-          couple_id: coupleId
-        }
-      });
+      const totalAnswersResult = await query(
+        'SELECT COUNT(*) as count FROM answers WHERE couple_id = $1',
+        [coupleId]
+      );
+      const totalAnswers = parseInt(totalAnswersResult.rows[0].count);
 
       // 计算本周回答数
       const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-      const weeklyAnswers = await Answer.count({
-        where: {
-          couple_id: coupleId,
-          created_at: { [Sequelize.Op.gte]: weekAgo }
-        }
-      });
+      const weeklyAnswersResult = await query(
+        'SELECT COUNT(*) as count FROM answers WHERE couple_id = $1 AND created_at >= $2',
+        [coupleId, weekAgo]
+      );
+      const weeklyAnswers = parseInt(weeklyAnswersResult.rows[0].count);
 
       // 计算本月回答数
       const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-      const monthlyAnswers = await Answer.count({
-        where: {
-          couple_id: coupleId,
-          created_at: { [Sequelize.Op.gte]: monthAgo }
-        }
-      });
+      const monthlyAnswersResult = await query(
+        'SELECT COUNT(*) as count FROM answers WHERE couple_id = $1 AND created_at >= $2',
+        [coupleId, monthAgo]
+      );
+      const monthlyAnswers = parseInt(monthlyAnswersResult.rows[0].count);
 
       return {
         days_together: daysTogether,
@@ -161,7 +138,7 @@ class CoupleService {
    */
   static async unbindCouple(coupleId, userId) {
     try {
-      const couple = await Couple.findByPk(coupleId);
+      const couple = await Couple.findById(coupleId);
       if (!couple) {
         throw new Error('Couple not found');
       }
@@ -172,12 +149,11 @@ class CoupleService {
       }
 
       // 停用情侣关系（不删除，只是标记为不活跃）
-      await couple.update({
-        is_active: false,
-        end_date: new Date()
+      const updatedCouple = await Couple.update(coupleId, {
+        status: 'inactive'
       });
 
-      return couple.toJSON();
+      return updatedCouple ? updatedCouple.toJSON() : null;
     } catch (error) {
       console.error('Unbind couple error:', error);
       throw error;

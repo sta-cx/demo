@@ -40,24 +40,24 @@ router.get('/info', authMiddleware, async (req, res) => {
  */
 router.post('/bind', authMiddleware, async (req, res) => {
   try {
-    const { 
-      partner_phone, 
-      partner_phone_code, 
-      couple_name 
+    const {
+      partner_phone,
+      partner_phone_code,
+      couple_name
     } = req.body;
-    
+
     const userId = req.user.userId;
-    
+
     // 验证必填字段
     if (!partner_phone || !partner_phone_code) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Partner phone and verification code are required',
         code: 'MISSING_PARTNER_INFO'
       });
     }
 
     if (!couple_name) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Couple name is required',
         code: 'MISSING_COUPLE_NAME'
       });
@@ -66,7 +66,7 @@ router.post('/bind', authMiddleware, async (req, res) => {
     // 验证手机号格式
     const phoneRegex = /^1[3-9]\d{9}$/;
     if (!phoneRegex.test(partner_phone)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid phone number format',
         code: 'INVALID_PHONE'
       });
@@ -75,27 +75,50 @@ router.post('/bind', authMiddleware, async (req, res) => {
     // TODO: 验证验证码（暂时跳过）
     // const isValidCode = await verifyPhoneCode(partner_phone, partner_phone_code);
     // if (!isValidCode) {
-    //   return res.status(400).json({ 
+    //   return res.status(400).json({
     //     error: 'Invalid verification code',
     //     code: 'INVALID_CODE'
     //   });
     // }
 
-    // 获取用户的手机号
-    const { User } = require('../models/User');
-    const currentUser = await User.findByPk(userId);
-    const userPhone = currentUser.phone;
+    const { User } = require('../models');
+
+    // 获取当前用户信息
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json({
+        error: 'Current user not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    // 根据手机号查找伴侣用户
+    const partnerUser = await User.findByPhone(partner_phone);
+    if (!partnerUser) {
+      return res.status(404).json({
+        error: 'Partner user not found',
+        code: 'PARTNER_NOT_FOUND'
+      });
+    }
+
+    const partnerUserId = partnerUser.id;
+
+    // 检查是否尝试与自己绑定
+    if (userId === partnerUserId) {
+      return res.status(400).json({
+        error: 'Cannot bind with yourself',
+        code: 'SELF_BIND'
+      });
+    }
 
     // 创建情侣关系
     const couple = await CoupleService.bindCouple(
       userId,
-      partner_phone, // 使用 partner_phone 作为 user2Id（暂时）
-      couple_name,
-      userPhone,
-      partner_phone
+      partnerUserId,
+      couple_name
     );
 
-    logger.info(`Couple bound: ${couple.id}, User: ${userId}, Partner: ${partner_phone}`);
+    logger.info(`Couple bound: ${couple.id}, User: ${userId}, Partner: ${partnerUserId}`);
 
     res.status(201).json({
       message: 'Couple bound successfully',
@@ -103,23 +126,31 @@ router.post('/bind', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     logger.error('Bind couple error:', error);
-    
+
     // 处理特定错误
-    if (error.message === 'User already has an active couple relationship') {
-      return res.status(400).json({ 
+    if (error.message === 'User already has an active couple relationship' ||
+        error.message === 'Partner already has an active couple relationship') {
+      return res.status(400).json({
         error: 'User already has an active couple',
         code: 'ALREADY_BOUND'
       });
     }
-    
+
     if (error.message === 'Cannot bind with yourself') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Cannot bind with yourself',
         code: 'SELF_BIND'
       });
     }
 
-    res.status(500).json({ 
+    if (error.message === 'Partner not found') {
+      return res.status(404).json({
+        error: 'Partner user not found',
+        code: 'PARTNER_NOT_FOUND'
+      });
+    }
+
+    res.status(500).json({
       error: 'Failed to bind couple',
       code: 'INTERNAL_ERROR'
     });
