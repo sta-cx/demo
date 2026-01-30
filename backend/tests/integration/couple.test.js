@@ -132,45 +132,131 @@ describe('Couple Binding Logic', () => {
     });
   });
 
-  describe('Couple Service Logic', () => {
-    it('should validate that userId === partnerUserId check is in place', () => {
-      // Verify the logic exists in the service
-      const coupleService = require('../../src/services/coupleService');
-      expect(typeof coupleService.bindCouple).toBe('function');
+  describe('POST /api/couple/bind - Business logic validation', () => {
+    // Mock the User model methods
+    beforeEach(() => {
+      jest.clearAllMocks();
     });
-  });
 
-  describe('User Model Methods', () => {
-    it('should have findByPhone method', () => {
+    it('should reject binding to self with 400', async () => {
+      // Mock User.findById to return current user
       const { User } = require('../../src/models');
-      expect(typeof User.findByPhone).toBe('function');
+      jest.spyOn(User, 'findById').mockResolvedValue({
+        id: 'test-user-123',
+        phone: '13800138000'
+      });
+
+      // Mock User.findByPhone to return the same user (self-bind attempt)
+      jest.spyOn(User, 'findByPhone').mockResolvedValue({
+        id: 'test-user-123',  // Same as current user
+        phone: '13800138000'
+      });
+
+      const response = await request(app)
+        .post('/api/couple/bind')
+        .set('x-user-id', 'test-user-123')
+        .send({
+          partner_phone: '13800138000',  // Same as current user's phone
+          partner_phone_code: '123456',
+          couple_name: '测试情侣'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('Cannot bind');
+      expect(response.body.code).toBe('SELF_BIND');
+
+      // Verify the mocks were called
+      expect(User.findById).toHaveBeenCalledWith('test-user-123');
+      expect(User.findByPhone).toHaveBeenCalledWith('13800138000');
     });
 
-    it('should have findByPk method', () => {
+    it('should return 404 for non-existent partner', async () => {
+      // Mock User.findById to return current user
       const { User } = require('../../src/models');
-      expect(typeof User.findByPk).toBe('function');
+      jest.spyOn(User, 'findById').mockResolvedValue({
+        id: 'test-user-456',
+        phone: '13800138000'
+      });
+
+      // Mock User.findByPhone to return null (partner not found)
+      jest.spyOn(User, 'findByPhone').mockResolvedValue(null);
+
+      const response = await request(app)
+        .post('/api/couple/bind')
+        .set('x-user-id', 'test-user-456')
+        .send({
+          partner_phone: '19999999999',  // Phone that doesn't exist
+          partner_phone_code: '123456',
+          couple_name: '测试情侣'
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toContain('Partner user not found');
+      expect(response.body.code).toBe('PARTNER_NOT_FOUND');
+
+      // Verify the mocks were called
+      expect(User.findById).toHaveBeenCalledWith('test-user-456');
+      expect(User.findByPhone).toHaveBeenCalledWith('19999999999');
     });
 
-    it('should have findById method', () => {
+    it('should return 404 if current user not found', async () => {
+      // Mock User.findById to return null (current user not found)
       const { User } = require('../../src/models');
-      expect(typeof User.findById).toBe('function');
-    });
-  });
+      jest.spyOn(User, 'findById').mockResolvedValue(null);
 
-  describe('Couple Model Methods', () => {
-    it('should have findActiveByUserId method', () => {
-      const { Couple } = require('../../src/models');
-      expect(typeof Couple.findActiveByUserId).toBe('function');
+      const response = await request(app)
+        .post('/api/couple/bind')
+        .set('x-user-id', 'non-existent-user')
+        .send({
+          partner_phone: '13800138000',
+          partner_phone_code: '123456',
+          couple_name: '测试情侣'
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toContain('Current user not found');
+      expect(response.body.code).toBe('USER_NOT_FOUND');
+
+      // Verify findById was called
+      expect(User.findById).toHaveBeenCalledWith('non-existent-user');
+      // findByPhone should not be called if current user is not found
+      expect(User.findByPhone).not.toHaveBeenCalled();
     });
 
-    it('should have create method', () => {
-      const { Couple } = require('../../src/models');
-      expect(typeof Couple.create).toBe('function');
-    });
+    it('should return 400 when current user already has active couple', async () => {
+      const { User, Couple } = require('../../src/models');
 
-    it('should have findByPk method', () => {
-      const { Couple } = require('../../src/models');
-      expect(typeof Couple.findByPk).toBe('function');
+      // Mock User.findById to return current user
+      jest.spyOn(User, 'findById').mockResolvedValue({
+        id: 'user-with-couple',
+        phone: '13800138000'
+      });
+
+      // Mock User.findByPhone to return partner
+      jest.spyOn(User, 'findByPhone').mockResolvedValue({
+        id: 'partner-user-456',
+        phone: '13900139000'
+      });
+
+      // Mock Couple.findActiveByUserId to return existing couple
+      jest.spyOn(Couple, 'findActiveByUserId').mockResolvedValue({
+        id: 'existing-couple-123',
+        user1_id: 'user-with-couple',
+        user2_id: 'another-partner'
+      });
+
+      const response = await request(app)
+        .post('/api/couple/bind')
+        .set('x-user-id', 'user-with-couple')
+        .send({
+          partner_phone: '13900139000',
+          partner_phone_code: '123456',
+          couple_name: '测试情侣'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('already has an active couple');
+      expect(response.body.code).toBe('ALREADY_BOUND');
     });
   });
 });
