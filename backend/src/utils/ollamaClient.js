@@ -1,6 +1,7 @@
 // backend/src/utils/ollamaClient.js
 const axios = require('axios');
 const logger = require('./logger');
+const { aiHealthManager } = require('./aiHealthChecker');
 
 class OllamaClient {
   constructor() {
@@ -29,11 +30,18 @@ class OllamaClient {
 
     try {
       const response = await this.client.get('/api/tags');
+
+      // 标记成功
+      aiHealthManager.markSuccess('ollama');
+
       logger.info('Ollama service is available', {
         models: response.data.models?.map(m => m.name) || []
       });
       return true;
     } catch (error) {
+      // 标记失败
+      aiHealthManager.markFailure('ollama', error);
+
       logger.warn('Ollama service is not available', {
         error: error.message,
         url: this.baseURL
@@ -48,6 +56,11 @@ class OllamaClient {
   async generateQuestion(prompt) {
     if (!this.enabled) {
       throw new Error('Ollama is not enabled');
+    }
+
+    // 检查健康状态
+    if (!aiHealthManager.isHealthy('ollama')) {
+      throw new Error('Ollama service is unhealthy - circuit breaker is open');
     }
 
     try {
@@ -66,6 +79,9 @@ class OllamaClient {
         throw new Error('Empty response from Ollama');
       }
 
+      // 标记成功
+      aiHealthManager.markSuccess('ollama');
+
       logger.info('Ollama question generated', {
         model: this.model,
         length: questionText.length
@@ -73,6 +89,9 @@ class OllamaClient {
 
       return questionText;
     } catch (error) {
+      // 标记失败
+      aiHealthManager.markFailure('ollama', error);
+
       logger.error('Failed to generate question with Ollama', error);
       throw new Error(`Ollama error: ${error.message}`);
     }
@@ -84,6 +103,11 @@ class OllamaClient {
   async analyzeSentiment(text) {
     if (!this.enabled) {
       throw new Error('Ollama is not enabled');
+    }
+
+    // 检查健康状态
+    if (!aiHealthManager.isHealthy('ollama')) {
+      throw new Error('Ollama service is unhealthy - circuit breaker is open');
     }
 
     try {
@@ -103,11 +127,17 @@ class OllamaClient {
       const jsonMatch = result.match(/\{[\s\S]*\}/);
 
       if (jsonMatch) {
+        // 标记成功
+        aiHealthManager.markSuccess('ollama');
+
         return JSON.parse(jsonMatch[0]);
       }
 
       throw new Error('Invalid response format');
     } catch (error) {
+      // 标记失败
+      aiHealthManager.markFailure('ollama', error);
+
       logger.error('Failed to analyze sentiment with Ollama', error);
       // 返回默认值
       return {

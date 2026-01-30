@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const Question = require('../models/Question');
 const ollamaClient = require('../utils/ollamaClient');
 const AIFallback = require('../utils/aiFallback');
+const { aiHealthManager } = require('../utils/aiHealthChecker');
 
 class AIService {
   constructor() {
@@ -89,30 +90,44 @@ class AIService {
    * 心流API直接生成问题（供降级策略调用）
    */
   async generatePersonalizedQuestionInternal(coupleId, history) {
-    // 分析历史数据
-    const analysis = this.analyzeHistory(history);
+    // 检查服务健康状态
+    if (!aiHealthManager.isHealthy('iflow')) {
+      throw new Error('iFlow service is unhealthy - circuit breaker is open');
+    }
 
-    // 构建提示词
-    const prompt = this.buildQuestionPrompt(analysis);
+    try {
+      // 分析历史数据
+      const analysis = this.analyzeHistory(history);
 
-    // 调用AI生成问题
-    const questionText = await iflowClient.generateQuestion(prompt, {
-      temperature: 0.8,
-      max_tokens: 100
-    });
+      // 构建提示词
+      const prompt = this.buildQuestionPrompt(analysis);
 
-    // 验证生成的问题
-    const validatedQuestion = this.validateQuestion(questionText);
+      // 调用AI生成问题
+      const questionText = await iflowClient.generateQuestion(prompt, {
+        temperature: 0.8,
+        max_tokens: 100
+      });
 
-    logger.info('Generated personalized question via iFlow', { coupleId, length: questionText.length });
+      // 验证生成的问题
+      const validatedQuestion = this.validateQuestion(questionText);
 
-    return {
-      question_text: validatedQuestion,
-      category: 'ai_generated',
-      difficulty: this.calculateDifficulty(analysis),
-      tags: this.extractTags(analysis),
-      answer_type: 'text'
-    };
+      // 标记成功
+      aiHealthManager.markSuccess('iflow');
+
+      logger.info('Generated personalized question via iFlow', { coupleId, length: questionText.length });
+
+      return {
+        question_text: validatedQuestion,
+        category: 'ai_generated',
+        difficulty: this.calculateDifficulty(analysis),
+        tags: this.extractTags(analysis),
+        answer_type: 'text'
+      };
+    } catch (error) {
+      // 标记失败
+      aiHealthManager.markFailure('iflow', error);
+      throw error;
+    }
   }
 
   /**
@@ -373,9 +388,24 @@ class AIService {
    * 心流API直接分析情感（供降级策略调用）
    */
   async analyzeSentimentInternal(text) {
-    const result = await iflowClient.analyzeSentiment(text);
-    logger.info('Analyzed sentiment via iFlow', { textLength: text.length, sentiment: result.sentiment });
-    return result;
+    // 检查服务健康状态
+    if (!aiHealthManager.isHealthy('iflow')) {
+      throw new Error('iFlow service is unhealthy - circuit breaker is open');
+    }
+
+    try {
+      const result = await iflowClient.analyzeSentiment(text);
+
+      // 标记成功
+      aiHealthManager.markSuccess('iflow');
+
+      logger.info('Analyzed sentiment via iFlow', { textLength: text.length, sentiment: result.sentiment });
+      return result;
+    } catch (error) {
+      // 标记失败
+      aiHealthManager.markFailure('iflow', error);
+      throw error;
+    }
   }
 
   /**
@@ -384,22 +414,60 @@ class AIService {
   async healthCheck() {
     try {
       const result = await iflowClient.healthCheck();
+
+      // 如果iFlow可用，标记成功
+      if (result.available) {
+        aiHealthManager.markSuccess('iflow');
+      }
+
       return {
         api: result,
         service: {
           rateLimit: this.rateLimit.requests < this.rateLimit.maxRequests,
           stats: this.getUsageStats()
-        }
+        },
+        healthCheckers: aiHealthManager.getAllHealthReports()
       };
     } catch (error) {
       logger.error('AI service health check failed', error);
+
+      // 标记失败
+      aiHealthManager.markFailure('iflow', error);
+
       return {
         api: { available: false, error: error.message },
         service: {
           rateLimit: false,
           stats: this.getUsageStats()
-        }
+        },
+        healthCheckers: aiHealthManager.getAllHealthReports()
       };
+    }
+  }
+
+  /**
+   * 获取整体AI服务健康状态
+   */
+  getOverallHealth() {
+    return aiHealthManager.getOverallHealth();
+  }
+
+  /**
+   * 获取特定服务的健康状态
+   */
+  getServiceHealth(serviceName) {
+    const checker = aiHealthManager.getChecker(serviceName);
+    return checker ? checker.getHealthReport() : null;
+  }
+
+  /**
+   * 重置特定服务的健康检查器
+   */
+  resetServiceHealth(serviceName) {
+    const checker = aiHealthManager.getChecker(serviceName);
+    if (checker) {
+      checker.reset();
+      logger.info(`Reset health checker for ${serviceName}`);
     }
   }
 }
