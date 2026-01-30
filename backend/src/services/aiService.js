@@ -1,6 +1,8 @@
 const iflowClient = require('../utils/iflowClient');
 const logger = require('../utils/logger');
 const Question = require('../models/Question');
+const ollamaClient = require('../utils/ollamaClient');
+const AIFallback = require('../utils/aiFallback');
 
 class AIService {
   constructor() {
@@ -52,43 +54,65 @@ class AIService {
   }
 
   /**
-   * 基于历史回答生成个性化问题
+   * 基于历史回答生成个性化问题（带降级策略）
    */
   async generatePersonalizedQuestion(coupleId, history) {
     try {
       this.checkRateLimit();
-      
-      // 分析历史数据
-      const analysis = this.analyzeHistory(history);
-      
-      // 构建提示词
-      const prompt = this.buildQuestionPrompt(analysis);
-      
-      // 调用AI生成问题
-      const questionText = await iflowClient.generateQuestion(prompt, {
-        temperature: 0.8,
-        max_tokens: 100
-      });
-      
-      // 验证生成的问题
-      const validatedQuestion = this.validateQuestion(questionText);
-      
+
+      // 使用降级策略
+      const result = await AIFallback.generateQuestionWithFallback(
+        coupleId,
+        history,
+        this,  // 主AI (iFlow)
+        ollamaClient  // 备用AI (Ollama)
+      );
+
+      // 更新统计（只计成功）
       this.updateStats(true);
-      logger.info('Generated personalized question', { coupleId, length: questionText.length });
-      
-      return {
-        question_text: validatedQuestion,
-        category: 'ai_generated',
-        difficulty: this.calculateDifficulty(analysis),
-        tags: this.extractTags(analysis),
-        answer_type: 'text'
-      };
-      
+      logger.info('Generated question with fallback strategy', {
+        coupleId,
+        source: result.source,
+        length: result.question_text.length
+      });
+
+      return result;
+
     } catch (error) {
       this.updateStats(false);
-      logger.error('Failed to generate personalized question', { coupleId, error: error.message });
+      logger.error('All AI fallback strategies failed', { coupleId, error: error.message });
       throw error;
     }
+  }
+
+  /**
+   * 心流API直接生成问题（供降级策略调用）
+   */
+  async generatePersonalizedQuestionInternal(coupleId, history) {
+    // 分析历史数据
+    const analysis = this.analyzeHistory(history);
+
+    // 构建提示词
+    const prompt = this.buildQuestionPrompt(analysis);
+
+    // 调用AI生成问题
+    const questionText = await iflowClient.generateQuestion(prompt, {
+      temperature: 0.8,
+      max_tokens: 100
+    });
+
+    // 验证生成的问题
+    const validatedQuestion = this.validateQuestion(questionText);
+
+    logger.info('Generated personalized question via iFlow', { coupleId, length: questionText.length });
+
+    return {
+      question_text: validatedQuestion,
+      category: 'ai_generated',
+      difficulty: this.calculateDifficulty(analysis),
+      tags: this.extractTags(analysis),
+      answer_type: 'text'
+    };
   }
 
   /**
@@ -312,24 +336,46 @@ class AIService {
   }
 
   /**
-   * 分析文本情感
+   * 分析文本情感（带降级策略）
    */
   async analyzeSentiment(text) {
     try {
       this.checkRateLimit();
-      
-      const result = await iflowClient.analyzeSentiment(text);
-      
+
+      // 使用降级策略
+      const result = await AIFallback.analyzeSentimentWithFallback(
+        text,
+        this,  // 主AI (iFlow)
+        ollamaClient  // 备用AI (Ollama)
+      );
+
       this.updateStats(true);
-      logger.info('Analyzed sentiment', { textLength: text.length, sentiment: result.sentiment });
-      
+      logger.info('Analyzed sentiment with fallback strategy', {
+        textLength: text.length,
+        sentiment: result.sentiment
+      });
+
       return result;
-      
+
     } catch (error) {
       this.updateStats(false);
-      logger.error('Failed to analyze sentiment', { error: error.message });
-      throw error;
+      logger.error('All sentiment analysis fallback strategies failed', { error: error.message });
+      // 返回默认值
+      return {
+        sentiment: 'neutral',
+        sentiment_score: 50,
+        keywords: []
+      };
     }
+  }
+
+  /**
+   * 心流API直接分析情感（供降级策略调用）
+   */
+  async analyzeSentimentInternal(text) {
+    const result = await iflowClient.analyzeSentiment(text);
+    logger.info('Analyzed sentiment via iFlow', { textLength: text.length, sentiment: result.sentiment });
+    return result;
   }
 
   /**
