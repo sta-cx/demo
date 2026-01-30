@@ -13,7 +13,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "seed": "node src/scripts/seedQuestions.js"
   },
   "keywords": [],
   "author": "",
